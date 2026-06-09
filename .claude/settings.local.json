@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git --version)",
+      "Bash(gh --version)",
+      "Bash(winget *)",
+      "Bash(powershell -Command \"Get-ChildItem 'C:\\\\Users\\\\palliative\\\\Desktop\\\\jawad\\\\coordinator apps\\\\anaphylaxis-course\\\\assets' -Recurse | Measure-Object -Property Length -Sum | Select-Object -ExpandProperty Sum\")",
+      "Bash(git init *)",
+      "Bash(git config *)",
+      "Bash(git add *)",
+      "Bash(git rm *)"
+    ]
+  }
+}

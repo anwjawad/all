@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anaphylaxis Recognition and Management - Course</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS CDN for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Supabase Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Main App Container -->
+    <div id="app-container">
+        
+        <!-- Header / Progress Tracking (Hidden during Certificate printing) -->
+        <header id="main-header" class="no-print">
+            <div class="header-logo">
+                <i class="fa-solid fa-heart-pulse pulse-icon"></i>
+                <div class="logo-text">
+                    <h1>Anaphylaxis Recognition & Management</h1>
+                    <span>Current Guidelines and Best Practices</span>
+                </div>
+            </div>
+            
+            <!-- Step Navigation Indicator -->
+            <div class="step-indicator">
+                <div class="step active" id="step-register">
+                    <span class="step-num">1</span>
+                    <span class="step-label">Registration</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" id="step-presentation">
+                    <span class="step-num">2</span>
+                    <span class="step-label">Presentation</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" id="step-video">
+                    <span class="step-num">3</span>
+                    <span class="step-label">Video</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" id="step-activity">
+                    <span class="step-num">4</span>
+                    <span class="step-label">Activity</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" id="step-exam">
+                    <span class="step-num">5</span>
+                    <span class="step-label">Post-Exam</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" id="step-evaluation">
+                    <span class="step-num">6</span>
+                    <span class="step-label">Evaluation</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" id="step-certificate">
+                    <span class="step-num">7</span>
+                    <span class="step-label">Certificate</span>
+                </div>
+            </div>
+
+            <!-- Header Actions (Exit/Logout) -->
+            <div class="header-actions no-print" id="header-logout-btn" style="display: none;">
+                <button class="btn btn-secondary btn-sm" onclick="confirmLogout()" title="Exit and reset course progress" style="background: rgba(220, 38, 38, 0.08); border-color: rgba(220, 38, 38, 0.2); color: #dc2626; font-weight: 600;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Exit Course
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Card Section (Dynamic Views) -->
+        <main id="main-content">
+            
+            <!-- SECTION 1: REGISTRATION & LOGIN -->
+            <section id="view-register" class="view-section active no-print">
+                <div class="card glassmorphism animate-fade-in" style="padding: 0;">
+                    
+                    <!-- Tabs Header -->
+                    <div class="auth-tabs" style="display: flex; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.5);">
+                        <button type="button" class="auth-tab active" onclick="switchAuthTab('register')" style="flex: 1; padding: 1.5rem; background: transparent; border: none; font-family: var(--font-heading); font-weight: 700; font-size: 1.1rem; color: var(--primary-color); border-bottom: 3px solid var(--primary-color); cursor: pointer; transition: all 0.2s;">
+                            <i class="fa-solid fa-user-plus"></i> New Registration
+                        </button>
+                        <button type="button" class="auth-tab" onclick="switchAuthTab('login')" style="flex: 1; padding: 1.5rem; background: transparent; border: none; font-family: var(--font-heading); font-weight: 600; font-size: 1.1rem; color: var(--text-muted); border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;">
+                            <i class="fa-solid fa-certificate"></i> Retrieve Certificate
+                        </button>
+                    </div>
+
+                    <div style="padding: 2.5rem;">
+                        <!-- Register Form -->
+                        <div id="auth-register-section">
+                            <div class="text-center" style="margin-bottom: 2rem;">
+                                <h2>Course Registration</h2>
+                                <p>Please enter your information to begin the anaphylaxis training course. A certificate will be issued in this name upon passing the exam.</p>
+                            </div>
+                            <form id="registration-form" onsubmit="event.preventDefault(); submitRegistration();">
+                                <div class="form-row-3">
+                                    <div class="form-group">
+                                        <label for="reg-first-name"><i class="fa-solid fa-user"></i> First Name</label>
+                                        <input type="text" id="reg-first-name" required placeholder="First Name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="reg-middle-name"><i class="fa-solid fa-user-tag"></i> Middle Name</label>
+                                        <input type="text" id="reg-middle-name" placeholder="Middle Name (Optional)">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="reg-last-name"><i class="fa-solid fa-user"></i> Last Name</label>
+                                        <input type="text" id="reg-last-name" required placeholder="Last Name">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-dept"><i class="fa-solid fa-hospital-user"></i> Department</label>
+                                    <input type="text" id="reg-dept" required placeholder="e.g. Emergency Department, ICU, Oncology...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-job-title"><i class="fa-solid fa-user-nurse"></i> Job Title</label>
+                                    <select id="reg-job-title" required>
+                                        <option value="" disabled selected>Select your job title...</option>
+                                        <option value="Nurse">Nurse</option>
+                                        <option value="Physician">Physician</option>
+                                        <option value="Others">Others</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-password"><i class="fa-solid fa-key"></i> Choose a Password</label>
+                                    <input type="password" id="reg-password" required placeholder="Enter a password to secure your certificate">
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block btn-lg">
+                                    <span>Start Training Course</span> <i class="fa-solid fa-arrow-right"></i>
+                                </button>
+                                <div style="text-align: center; margin-top: 1.5rem;">
+                                    <button type="button" class="btn btn-secondary btn-block btn-lg" onclick="switchAuthTab('login')">
+                                        <i class="fa-solid fa-right-from-bracket"></i> Already registered? Log In
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Login Form -->
+                        <div id="auth-login-section" style="display: none;">
+                            <div class="text-center" style="margin-bottom: 2rem;">
+                                <h2>Retrieve Your Certificate</h2>
+                                <p>If you have already completed the course and passed the exam, enter your exact registered name to download or email your certificate.</p>
+                            </div>
+                            <form id="login-form" onsubmit="event.preventDefault(); loginUser();">
+                                <div class="form-group">
+                                    <label for="login-name"><i class="fa-solid fa-user-check"></i> Registered Full Name</label>
+                                    <input type="text" id="login-name" required placeholder="Enter the exact name you used during registration">
+                                </div>
+                                <div class="form-group">
+                                    <label for="login-password"><i class="fa-solid fa-key"></i> Password</label>
+                                    <input type="password" id="login-password" required placeholder="Enter your password">
+                                </div>
+                                <button type="submit" class="btn btn-success btn-block btn-lg">
+                                    <i class="fa-solid fa-magnifying-glass"></i> Find My Certificate
+                                </button>
+                                <div style="text-align: center; margin-top: 1.5rem;">
+                                    <button type="button" class="btn btn-secondary btn-block btn-lg" onclick="switchAuthTab('register')">
+                                        <i class="fa-solid fa-user-plus"></i> Need to register? Sign Up
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: PRESENTATION PLAYER -->
+            <section id="view-presentation" class="view-section no-print">
+                <div class="presentation-layout animate-fade-in">
+                    <!-- Slide Display -->
+                    <div class="slide-container glassmorphism">
+                        <div id="slide-wrapper">
+                            <img id="slide-img" src="assets/slides/slide_1.png" alt="Slide 1">
+                            <!-- Overlay Play Indicator -->
+                            <div id="play-overlay" onclick="togglePlayHold()">
+                                <i class="fa-solid fa-play"></i>
+                            </div>
+                        </div>
+                        <!-- Current Narration Status -->
+                        <div class="narration-status">
+                            <span class="slide-number-indicator">Slide <strong id="current-slide-num">1</strong> of 24</span>
+                            <span id="audio-duration-display">0:00 / 0:00</span>
+                        </div>
+                    </div>
+
+                    <!-- Player Controls Panel -->
+                    <div class="controls-panel glassmorphism">
+                        <!-- Playback timeline -->
+                        <div class="timeline-container">
+                            <div class="timeline-bar" id="timeline-bg" onclick="seekAudio(event)">
+                                <div class="timeline-progress" id="timeline-fill"></div>
+                            </div>
+                        </div>
+
+                        <!-- Buttons Row -->
+                        <div class="controls-row">
+                            <div class="control-group-left">
+                                <button class="btn btn-secondary btn-circle" id="btn-back" onclick="prevSlide()" title="Previous Slide">
+                                    <i class="fa-solid fa-backward-step"></i>
+                                </button>
+                                <button class="btn btn-primary btn-circle-lg" id="btn-play-hold" onclick="togglePlayHold()" title="Play/Hold Narration">
+                                    <i class="fa-solid fa-play" id="play-icon"></i>
+                                </button>
+                                <button class="btn btn-secondary btn-circle" id="btn-next" onclick="nextSlide()" title="Next Slide">
+                                    <i class="fa-solid fa-forward-step"></i>
+                                </button>
+                            </div>
+
+                            <div class="control-group-center">
+                                <div class="auto-advance-toggle">
+                                    <label class="switch">
+                                        <input type="checkbox" id="auto-advance-check" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span class="toggle-label">Auto-Advance Slides</span>
+                                </div>
+                            </div>
+
+                            <div class="control-group-right">
+                                <i class="fa-solid fa-volume-high volume-icon" onclick="toggleMute()" id="mute-icon"></i>
+                                <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.8" oninput="setVolume(this.value)">
+                            </div>
+                        </div>
+
+                        <div class="presentation-info">
+                            <p class="training-hint"><i class="fa-solid fa-info-circle"></i> Use **Hold** (Pause) to pause narration. You must complete all 24 slides before proceeding to the video.</p>
+                            <button class="btn btn-success btn-lg disabled" id="btn-start-video" onclick="goToVideo()" disabled>
+                                <span>Proceed to Video</span> <i class="fa-solid fa-video"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2B: VIDEO -->
+            <section id="view-video" class="view-section no-print">
+                <div class="card glassmorphism animate-fade-in video-section">
+                    <div class="card-header text-center">
+                        <i class="fa-solid fa-video card-title-icon" style="color: var(--accent-color);"></i>
+                        <h2>Training Video</h2>
+                        <p>Please watch the following video on anaphylaxis management before proceeding to the post-exam.</p>
+                    </div>
+
+                    <div class="video-player-wrapper">
+                        <div class="video-responsive-container">
+                            <iframe
+                                id="youtube-player"
+                                src="https://www.youtube.com/embed/yJnOgcba-To"
+                                title="Anaphylaxis Management Video"
+                                frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+
+                    <div class="video-actions">
+                        <p class="training-hint"><i class="fa-solid fa-info-circle"></i> Watch the complete video, then proceed to the interactive activity to test your skills.</p>
+                        <button class="btn btn-success btn-lg btn-block" id="btn-go-activity" onclick="goToActivity()">
+                            <span>Proceed to Interactive Activity</span> <i class="fa-solid fa-puzzle-piece"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2C: INTERACTIVE ACTIVITY -->
+            <section id="view-activity" class="view-section no-print">
+                <div class="activity-card glassmorphism animate-fade-in">
+                    <!-- Activity Banner Header -->
+                    <div class="activity-banner">
+                        <div class="activity-banner-left">
+                            <div class="activity-banner-icon"><i class="fa-solid fa-kit-medical"></i></div>
+                            <div class="activity-banner-title">
+                                <span>INTERACTIVE ACTIVITY</span>
+                                <h2>ANAPHYLAXIS</h2>
+                                <p class="activity-subtitle">Learn &bull; Understand &bull; Act</p>
+                            </div>
+                        </div>
+                        <div class="activity-banner-info-box">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <span>Click items to select and place, or drag them!</span>
+                        </div>
+                    </div>
+
+                    <!-- Intro and Triggers Row -->
+                    <div class="activity-intro-row">
+                        <div class="activity-intro-text">
+                            <p>Anaphylaxis is a severe, rapid-onset allergic reaction that can be life-threatening. Early recognition and immediate treatment save lives.</p>
+                            <div class="activity-mission-box">
+                                <i class="fa-solid fa-shield-halved"></i>
+                                <span><strong>Your mission:</strong> Complete the activities below to build your knowledge and confidence in recognizing and responding to anaphylaxis.</span>
+                            </div>
+                        </div>
+                        <div class="activity-triggers-panel">
+                            <h3>Common Triggers</h3>
+                            <div class="triggers-grid">
+                                <div class="trigger-badge"><i class="fa-solid fa-seedling"></i><span>Peanuts &amp; Tree nuts</span></div>
+                                <div class="trigger-badge"><i class="fa-solid fa-shrimp"></i><span>Shellfish</span></div>
+                                <div class="trigger-badge"><i class="fa-solid fa-egg"></i><span>Eggs</span></div>
+                                <div class="trigger-badge"><i class="fa-solid fa-glass-water"></i><span>Milk</span></div>
+                                <div class="trigger-badge"><i class="fa-solid fa-bugs"></i><span>Insect stings</span></div>
+                                <div class="trigger-badge"><i class="fa-solid fa-capsules"></i><span>Medications</span></div>
+                            </div>
+                            <div class="triggers-footer">
+                                <i class="fa-solid fa-lightbulb"></i>
+                                <span>Anyone can have anaphylaxis. It can happen quickly and without warning.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Columns Grid -->
+                    <div class="activity-columns-grid">
+                        
+                        <!-- Column 1: Drag & Drop Signs & Symptoms -->
+                        <div class="activity-column glassmorphism" id="act-col-drag">
+                            <div class="col-header">
+                                <span class="col-num">1</span>
+                                <h3>DRAG &amp; DROP</h3>
+                                <p>Drag (or click to assign) signs and symptoms into the correct body systems.</p>
+                            </div>
+                            
+                            <div class="drag-drop-layout">
+                                <!-- Target zones -->
+                                <div class="drop-zones-container">
+                                    <div class="drop-group">
+                                        <label>Skin</label>
+                                        <div class="drop-zone" id="zone-skin" data-system="skin"></div>
+                                    </div>
+                                    <div class="drop-group">
+                                        <label>Respiratory</label>
+                                        <div class="drop-zone" id="zone-respiratory" data-system="respiratory"></div>
+                                    </div>
+                                    <div class="drop-group">
+                                        <label>Cardiovascular</label>
+                                        <div class="drop-zone" id="zone-cardiovascular" data-system="cardiovascular"></div>
+                                    </div>
+                                    <div class="drop-group">
+                                        <label>Gastrointestinal</label>
+                                        <div class="drop-zone" id="zone-gastrointestinal" data-system="gastrointestinal"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Source Draggable items -->
+                                <div class="draggable-items-container">
+                                    <label>Signs &amp; Symptoms (click or drag these)</label>
+                                    <div class="draggable-pool" id="draggable-pool">
+                                        <div class="drag-item" draggable="true" id="symptom-skin" data-system="skin">Hives, itching, flushing</div>
+                                        <div class="drag-item" draggable="true" id="symptom-respiratory" data-system="respiratory">Wheezing, shortness of breath, throat tightness</div>
+                                        <div class="drag-item" draggable="true" id="symptom-gastro" data-system="gastrointestinal">Nausea, vomiting, abdominal pain</div>
+                                        <div class="drag-item" draggable="true" id="symptom-cardio" data-system="cardiovascular">Dizziness, weak pulse, low blood pressure</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-actions">
+                                <button class="btn btn-secondary btn-sm" id="btn-reset-drag" onclick="resetDragActivity()">
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
+                                </button>
+                                <span class="status-indicator" id="status-drag"><i class="fa-regular fa-circle-question"></i> Pending</span>
+                            </div>
+                        </div>
+
+                        <!-- Column 2: Multiple Choice Questions -->
+                        <div class="activity-column glassmorphism" id="act-col-mcq">
+                            <div class="col-header">
+                                <span class="col-num">2</span>
+                                <h3>MULTIPLE CHOICE</h3>
+                                <p>Choose the best answer for each question.</p>
+                            </div>
+                            
+                            <div class="mcq-questions-list">
+                                <div class="mcq-q-item" data-q="1">
+                                    <p><strong>1. Anaphylaxis symptoms usually develop within:</strong></p>
+                                    <div class="mcq-options">
+                                        <label><input type="radio" name="act-q1" value="A"> A. Several hours</label>
+                                        <label><input type="radio" name="act-q1" value="B"> B. 1&ndash;2 days</label>
+                                        <label><input type="radio" name="act-q1" value="C"> C. Minutes to up to 2 hours</label>
+                                        <label><input type="radio" name="act-q1" value="D"> D. Only after exercise</label>
+                                    </div>
+                                </div>
+                                <div class="mcq-q-item" data-q="2">
+                                    <p><strong>2. What is the first-line treatment for anaphylaxis?</strong></p>
+                                    <div class="mcq-options">
+                                        <label><input type="radio" name="act-q2" value="A"> A. Antihistamines</label>
+                                        <label><input type="radio" name="act-q2" value="B"> B. Epinephrine (adrenaline)</label>
+                                        <label><input type="radio" name="act-q2" value="C"> C. Corticosteroids</label>
+                                        <label><input type="radio" name="act-q2" value="D"> D. Inhaled bronchodilator</label>
+                                    </div>
+                                </div>
+                                <div class="mcq-q-item" data-q="3">
+                                    <p><strong>3. After giving epinephrine, what should you do next?</strong></p>
+                                    <div class="mcq-options">
+                                        <label><input type="radio" name="act-q3" value="A"> A. Wait and see if symptoms improve</label>
+                                        <label><input type="radio" name="act-q3" value="B"> B. Give food and fluids</label>
+                                        <label><input type="radio" name="act-q3" value="C"> C. Call emergency services</label>
+                                        <label><input type="radio" name="act-q3" value="D"> D. Put the person to sleep</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-actions">
+                                <button class="btn btn-primary btn-sm" id="btn-submit-mcq" onclick="submitMcqActivity()">
+                                    Submit Answers
+                                </button>
+                                <span class="status-indicator" id="status-mcq"><i class="fa-regular fa-circle-question"></i> Pending</span>
+                            </div>
+                        </div>
+
+                        <!-- Column 3: Scenario Challenge Ordering -->
+                        <div class="activity-column glassmorphism" id="act-col-order">
+                            <div class="col-header">
+                                <span class="col-num">3</span>
+                                <h3>SCENARIO CHALLENGE</h3>
+                                <p>Read the scenario and choose the best actions in order.</p>
+                            </div>
+                            
+                            <div class="scenario-box">
+                                <p><strong>Jamie, a 15-year-old student, eats a cookie containing peanuts. A few minutes later they start to feel itchy and their lips swell. They also complain of difficulty breathing.</strong></p>
+                            </div>
+                            
+                            <p class="instruction-text">What should you do? Put the steps in the correct order (1 = first step).</p>
+                            
+                            <div class="ordering-steps-list">
+                                <div class="order-step-item">
+                                    <select class="order-select" id="order-step-layflat">
+                                        <option value="" disabled selected>-</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                    <span class="order-step-text">Lay them flat and elevate their legs.</span>
+                                </div>
+                                <div class="order-step-item">
+                                    <select class="order-select" id="order-step-giepi">
+                                        <option value="" disabled selected>-</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                    <span class="order-step-text">Give epinephrine (if available).</span>
+                                </div>
+                                <div class="order-step-item">
+                                    <select class="order-select" id="order-step-callemerg">
+                                        <option value="" disabled selected>-</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                    <span class="order-step-text">Call emergency services immediately.</span>
+                                </div>
+                                <div class="order-step-item">
+                                    <select class="order-select" id="order-step-stay">
+                                        <option value="" disabled selected>-</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                    <span class="order-step-text">Stay with them and monitor their condition.</span>
+                                </div>
+                                <div class="order-step-item">
+                                    <select class="order-select" id="order-step-remove">
+                                        <option value="" disabled selected>-</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                    <span class="order-step-text">Remove them from the trigger (stop eating).</span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-actions">
+                                <button class="btn btn-success btn-sm" id="btn-submit-order" onclick="submitOrderActivity()">
+                                    Check Order
+                                </button>
+                                <span class="status-indicator" id="status-order"><i class="fa-regular fa-circle-question"></i> Pending</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Success and Progress Actions -->
+                    <div class="activity-footer-banner" id="activity-success-banner" style="display: none;">
+                        <div class="footer-success-message">
+                            <div class="success-star-icon"><i class="fa-solid fa-star"></i></div>
+                            <div class="success-text">
+                                <h4>WELL DONE! You've completed the activity.</h4>
+                                <p>Remember: <strong>Recognize early. Act fast. Save lives.</strong> Be prepared. Be confident. Be a lifesaver.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="activity-actions">
+                        <button class="btn btn-success btn-lg btn-block" id="btn-go-exam-unlocked" onclick="goToExamFromActivity()" disabled>
+                            <span>Proceed to Post-Exam</span> <i class="fa-solid fa-graduation-cap"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: POST-EXAM -->
+            <section id="view-exam" class="view-section no-print">
+                <div class="card glassmorphism animate-fade-in">
+                    <div class="card-header text-between">
+                        <div>
+                            <h2><i class="fa-solid fa-clipboard-question"></i> Post-Training Exam</h2>
+                            <p>Test your knowledge on anaphylaxis recognition and management guidelines. You must score at least <strong>4/5 (80%)</strong> to pass.</p>
+                        </div>
+                        <div class="badge badge-primary">
+                                <span>Questions: 5</span>
+                            </div>
+                    </div>
+
+                    <!-- Exam Questions Form -->
+                    <form id="exam-form" onsubmit="event.preventDefault(); gradeExam();">
+                        <div id="exam-questions-container">
+                            <!-- Injected dynamically by script.js -->
+                        </div>
+
+                        <div class="exam-actions">
+                            <button type="submit" class="btn btn-primary btn-lg btn-block">
+                                <i class="fa-solid fa-check-double"></i> Submit Exam Answers
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- SECTION 4: EVALUATION FORM (SCFHS Standard) -->
+            <section id="view-evaluation" class="view-section no-print">
+                <div class="eval-card glassmorphism animate-fade-in">
+
+                    <!-- Form Header -->
+                    <div class="eval-header">
+                        <div class="eval-header-logo">
+                            <i class="fa-solid fa-heart-pulse"></i>
+                        </div>
+                        <div class="eval-header-text">
+                            <h2>Course Evaluation Sheet</h2>
+                            <p class="eval-subtitle">For Courses Up to 10 Contact Hours</p>
+                            <p class="eval-desc">Congratulations on passing the exam! Please complete this evaluation to receive your certificate of completion. Your feedback helps improve the quality of our training programs.</p>
+                        </div>
+                    </div>
+
+                    <form id="evaluation-form" onsubmit="event.preventDefault(); submitEvaluation();">
+
+                        <!-- SECTION A: Course Information -->
+                        <div class="eval-section">
+                            <div class="eval-section-title">
+                                <span class="eval-section-badge">A</span>
+                                <h3>Course Information</h3>
+                            </div>
+                            <div class="eval-info-grid">
+                                <div class="eval-info-item">
+                                    <label>Course Title</label>
+                                    <div class="eval-info-value">Anaphylaxis Recognition &amp; Management</div>
+                                </div>
+                                <div class="eval-info-item">
+                                    <label>Duration of the course</label>
+                                    <div class="eval-info-value">1-Hour Online Training</div>
+                                </div>
+                                <div class="eval-info-item">
+                                    <label>Participant Name</label>
+                                    <div class="eval-info-value" id="eval-participant-name">—</div>
+                                </div>
+                                <div class="eval-info-item">
+                                    <label>Date</label>
+                                    <div class="eval-info-value" id="eval-date">—</div>
+                                </div>
+                                <div class="eval-info-item">
+                                    <label>Location of the course</label>
+                                    <div class="eval-info-value">Clinical Education &amp; Training Portal</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION B: Course Rating -->
+                        <div class="eval-section">
+                            <div class="eval-section-title">
+                                <span class="eval-section-badge">B</span>
+                                <h3>Course Rating</h3>
+                            </div>
+                            <p style="margin-bottom: 1.5rem; color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">
+                                <i class="fa-solid fa-circle-info"></i> Please check the appropriate box to offer your feedback about the course:
+                            </p>
+
+                            <!-- B1: Course Organization -->
+                            <div class="eval-subsection">
+                                <h4 class="eval-subsection-title"><i class="fa-solid fa-folder-open"></i> Course Organization</h4>
+                                <div class="eval-table">
+                                    <div class="eval-table-header">
+                                        <span class="eval-q-col">Item</span>
+                                        <div class="eval-scale-cols-4">
+                                            <span>Strongly Disagree</span><span>Disagree</span><span>Agree</span><span>Strongly Agree</span>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">1. Course registration procedure was clear to me</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q1" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q1" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q1" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q1" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">2. The location was easily accessible</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q2" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q2" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q2" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q2" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">3. The facilities and activity atmosphere were convenient</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q3" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q3" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q3" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q3" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">4. The instructional materials used during the course were appropriate</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q4" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q4" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q4" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q4" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- B2: Course Content -->
+                            <div class="eval-subsection">
+                                <h4 class="eval-subsection-title"><i class="fa-solid fa-book-open"></i> Course Content</h4>
+                                <div class="eval-table">
+                                    <div class="eval-table-header">
+                                        <span class="eval-q-col">Item</span>
+                                        <div class="eval-scale-cols-4">
+                                            <span>Strongly Disagree</span><span>Disagree</span><span>Agree</span><span>Strongly Agree</span>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">6. Learning objectives were clearly stated and met</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q6" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q6" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q6" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q6" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">7. Content was informative and useful</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q7" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q7" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q7" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q7" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">8. Content was relevant to my specialty area</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q8" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q8" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q8" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q8" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">9. The course enhanced my ability to apply learning objectives to my practice</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q9" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q9" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q9" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q9" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">10. Content was presented at an appropriate level of understanding</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q10" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q10" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q10" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q10" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- B3: Instructors and Presentations -->
+                            <div class="eval-subsection">
+                                <h4 class="eval-subsection-title"><i class="fa-solid fa-chalkboard-user"></i> Instructors and Presentations</h4>
+                                <div class="eval-table">
+                                    <div class="eval-table-header">
+                                        <span class="eval-q-col">Item</span>
+                                        <div class="eval-scale-cols-4">
+                                            <span>Strongly Disagree</span><span>Disagree</span><span>Agree</span><span>Strongly Agree</span>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">11. The presentations flowed in a logical sequence</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q11" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q11" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q11" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q11" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">12. Reading materials were useful</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q12" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q12" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q12" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q12" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">13. In general, the instructors were knowledgeable and organized</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q13" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q13" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q13" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q13" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">14. In general, instructors exhibited respect and concern</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q14" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q14" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q14" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q14" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">15. The instructors applied recent research findings and evidence-based protocol into the course</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q15" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q15" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q15" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q15" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">16. The amount of interaction and time were sufficient</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q16" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q16" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q16" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q16" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- B4: Pre & Post Knowledge Assessment -->
+                            <div class="eval-subsection">
+                                <h4 class="eval-subsection-title"><i class="fa-solid fa-clipboard-check"></i> Pre &amp; Post Knowledge Assessment (if applicable)</h4>
+                                <div class="eval-table">
+                                    <div class="eval-table-header">
+                                        <span class="eval-q-col">Item</span>
+                                        <div class="eval-scale-cols-4">
+                                            <span>Strongly Disagree</span><span>Disagree</span><span>Agree</span><span>Strongly Agree</span>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">17. The assessment criteria was clearly defined and appropriate</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q17" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q17" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q17" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q17" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">18. The assessment methods were appropriate</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q18" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q18" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q18" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q18" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">19. I received adequate feedback on my performance</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q19" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q19" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q19" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q19" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION C: Overall Satisfaction -->
+                        <div class="eval-section">
+                            <div class="eval-section-title">
+                                <span class="eval-section-badge">C</span>
+                                <h3>Overall Course Evaluation</h3>
+                            </div>
+                            <div class="eval-subsection">
+                                <div class="eval-table">
+                                    <div class="eval-table-header">
+                                        <span class="eval-q-col">Item</span>
+                                        <div class="eval-scale-cols-4">
+                                            <span>Poor</span><span>Fair</span><span>Good</span><span>Excellent</span>
+                                        </div>
+                                    </div>
+                                    <div class="eval-row">
+                                        <label class="eval-q-col">20. Overall Course Evaluation</label>
+                                        <div class="eval-scale-cols-4">
+                                            <label class="eval-radio-wrap"><input type="radio" name="q20" value="1" required><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q20" value="2"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q20" value="3"><span class="eval-radio-dot"></span></label>
+                                            <label class="eval-radio-wrap"><input type="radio" name="q20" value="4"><span class="eval-radio-dot"></span></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION D: Comments & Suggestions -->
+                        <div class="eval-section">
+                            <div class="eval-section-title">
+                                <span class="eval-section-badge">D</span>
+                                <h3>Comments &amp; Suggestions</h3>
+                            </div>
+                            <div class="eval-open-grid" style="grid-template-columns: 1fr;">
+                                <div class="form-group">
+                                    <label for="eval-feedback"><i class="fa-solid fa-comment-dots"></i> 21. Additional Comments and Suggestions:</label>
+                                    <textarea id="eval-feedback" rows="4" placeholder="Your comments or recommendations to improve the course..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="eval-submit-area">
+                            <p class="eval-note"><i class="fa-solid fa-shield-halved"></i> Your responses are confidential and used solely to improve training quality.</p>
+                            <button type="submit" class="btn btn-success btn-block btn-lg">
+                                <span>Submit Evaluation &amp; Get Certificate</span> <i class="fa-solid fa-certificate"></i>
+                            </button>
+                        </div>
+
+                        <!-- Form Metadata Footer -->
+                        <div class="eval-form-footer-metadata" style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1rem; display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted);">
+                            <span>Form Code: <strong>Training /03</strong></span>
+                            <span>Issue No: <strong>1/1</strong></span>
+                            <span>Issue Date: <strong>03/10/2023</strong></span>
+                        </div>
+
+                    </form>
+                </div>
+            </section>
+
+            <!-- SECTION 5: CERTIFICATE VIEW -->
+            <section id="view-certificate" class="view-section">
+                <!-- Outer Certificate Container (The actual printed card) -->
+                <div class="certificate-container animate-fade-in" id="printable-certificate-card">
+                    <div class="certificate-content-overlay">
+                        <div class="cert-overlay-body">
+                            <div class="cert-header">
+                                <span class="cert-badge-text">OFFICIAL CONTINUING MEDICAL EDUCATION</span>
+                            </div>
+                            
+                            <h1 class="cert-main-title">CERTIFICATE OF COMPLETION</h1>
+                            <p class="cert-presentation-text">This is proudly presented to</p>
+                            
+                            <h2 id="cert-participant-name" class="cert-recipient-name">Dr. John Doe</h2>
+                            
+                            <p class="cert-course-desc">
+                                for the successful completion of the web-based training course in clinical practice:
+                            </p>
+                            
+                            <div class="cert-course-box">
+                                <h3 class="cert-course-title">Anaphylaxis Recognition & Management</h3>
+                                <p class="cert-course-meta">1.0 Contact Hour | Current Clinical Guidelines</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Overlay Footer -->
+                        <div class="cert-overlay-footer">
+                            <div class="cert-footer-item">
+                                <span class="cert-footer-label">Date Issued:</span>
+                                <strong id="cert-issue-date" class="cert-footer-val">May 24, 2026</strong>
+                            </div>
+                            <div class="cert-footer-item">
+                                <span class="cert-footer-label">Certificate ID:</span>
+                                <strong id="cert-unique-id" class="cert-footer-val">AN-9823-8B39</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Print Action Options (Hidden in PDF print) -->
+                <div class="certificate-actions no-print">
+                    <button class="btn btn-primary btn-lg" onclick="printCertificate()">
+                        <i class="fa-solid fa-print"></i> Print / Save as PDF
+                    </button>
+                    <button class="btn btn-secondary btn-lg" onclick="promptEmailCertificate()">
+                        <i class="fa-solid fa-envelope"></i> Email Certificate
+                    </button>
+                    <button class="btn btn-secondary btn-lg" onclick="restartCourse()">
+                        <i class="fa-solid fa-rotate-left"></i> Register Another Student
+                    </button>
+                </div>
+
+                <!-- Email Certificate Modal -->
+                <div id="email-modal" class="modal no-print">
+                    <div class="modal-content glassmorphism animate-slide-down">
+                        <span class="close-modal" onclick="closeEmailModal()">&times;</span>
+                        <i class="fa-solid fa-paper-plane admin-modal-icon"></i>
+                        <h3>Send Certificate via Email</h3>
+                        <p>Where would you like to send your completion certificate?</p>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
+                            <button type="button" class="btn btn-secondary btn-block" onclick="emailCertificateToAdmin()">
+                                <i class="fa-solid fa-building-user"></i> Send to Course Administrator
+                            </button>
+                            
+                            <div style="position: relative; text-align: center; margin: 10px 0;">
+                                <hr style="border: 0; border-top: 1px solid var(--border-color);">
+                                <span style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: white; padding: 0 10px; font-size: 0.8rem; color: var(--text-muted);">OR</span>
+                            </div>
+
+                            <form onsubmit="event.preventDefault(); emailCertificateToUser();">
+                                <div class="form-group" style="text-align: left;">
+                                    <label for="user-email-input"><i class="fa-solid fa-envelope"></i> Send to My Email</label>
+                                    <input type="email" id="user-email-input" placeholder="Enter your email address" required style="margin-bottom: 10px;">
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block">
+                                    <i class="fa-solid fa-paper-plane"></i> Send to Me
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: ADMIN DASHBOARD -->
+            <section id="view-admin" class="view-section no-print">
+                <div class="admin-dashboard animate-fade-in">
+
+                    <!-- Dashboard Header -->
+                    <div class="admin-dash-header">
+                        <div class="admin-dash-title">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <div>
+                                <h2>Administrator Dashboard</h2>
+                                <p id="admin-welcome-msg">Welcome, Jehad Hawamdah</p>
+                            </div>
+                        </div>
+                        <div class="admin-dash-actions">
+                            <button class="btn btn-success btn-sm" onclick="exportToExcel()">
+                                <i class="fa-solid fa-file-excel"></i> Export Excel
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="exportToCSV()">
+                                <i class="fa-solid fa-file-csv"></i> Export CSV
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="clearLogs()">
+                                <i class="fa-solid fa-trash-can"></i> Clear Data
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="exitAdmin()">
+                                <i class="fa-solid fa-xmark"></i> Exit
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Database Connection Panel -->
+                    <div class="db-connection-panel glassmorphism" style="margin-bottom: 1.5rem; padding: 1.2rem 2rem; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; background: rgba(255, 255, 255, 0.65);">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div id="db-status-icon" class="status-indicator-icon" style="width: 14px; height: 14px; border-radius: 50%; background: #dc2626; box-shadow: 0 0 8px #dc2626; transition: all 0.3s ease;"></div>
+                            <div>
+                                <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--primary-color);">Database Connection: <span id="db-status-text">Local Storage Fallback</span></h4>
+                                <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: var(--text-muted);">Configure Supabase to enable secure cloud storage for registration, symptoms matching, alert logs, and evaluations.</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex: 1; justify-content: flex-end; max-width: 600px;">
+                            <input type="text" id="supabase-url" placeholder="Supabase URL (https://...)" style="flex: 1; min-width: 180px; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.85rem;">
+                            <input type="password" id="supabase-key" placeholder="Supabase Anon Key" style="flex: 1; min-width: 180px; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.85rem;">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="saveDatabaseConfig()" style="padding: 0.55rem 1rem; border-radius: 6px;">Connect</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="disconnectDatabase()" style="padding: 0.55rem 1rem; border-radius: 6px; background: rgba(220, 38, 38, 0.08); border-color: rgba(220, 38, 38, 0.2); color: #dc2626; font-weight: 600;">Disconnect</button>
+                        </div>
+                    </div>
+
+                    <!-- Google Sheets Sync Panel -->
+                    <div class="db-connection-panel glassmorphism" style="margin-bottom: 1.5rem; padding: 1.2rem 2rem; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; background: rgba(255, 255, 255, 0.65);">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div id="gas-status-icon" style="width: 14px; height: 14px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 8px #f59e0b; transition: all 0.3s ease; flex-shrink: 0;"></div>
+                            <div>
+                                <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--primary-color);">Google Sheets Sync: <span id="gas-status-text">Not Configured</span></h4>
+                                <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: var(--text-muted);">Paste your GAS Web App URL to automatically sync all participant data (registrations, exam results &amp; evaluations) to your Google Sheet.</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex: 1; justify-content: flex-end; max-width: 600px;">
+                            <input type="text" id="gas-url" placeholder="GAS Web App URL (https://script.google.com/macros/s/...)" style="flex: 1; min-width: 280px; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.85rem;">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="saveGasConfig()" style="padding: 0.55rem 1rem; border-radius: 6px;">Connect</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="disconnectGas()" style="padding: 0.55rem 1rem; border-radius: 6px; background: rgba(220, 38, 38, 0.08); border-color: rgba(220, 38, 38, 0.2); color: #dc2626; font-weight: 600;">Remove</button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards Row -->
+                    <div class="admin-stats-grid">
+                        <div class="stat-card stat-blue">
+                            <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                            <div class="stat-body">
+                                <div class="stat-number" id="stat-total">0</div>
+                                <div class="stat-label">Total Registrations</div>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-green">
+                            <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+                            <div class="stat-body">
+                                <div class="stat-number" id="stat-completed">0</div>
+                                <div class="stat-label">Completed Course</div>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-amber">
+                            <div class="stat-icon"><i class="fa-solid fa-percent"></i></div>
+                            <div class="stat-body">
+                                <div class="stat-number" id="stat-pass-rate">0%</div>
+                                <div class="stat-label">Pass Rate</div>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-teal">
+                            <div class="stat-icon"><i class="fa-solid fa-star"></i></div>
+                            <div class="stat-body">
+                                <div class="stat-number" id="stat-avg-rating">—</div>
+                                <div class="stat-label">Avg. Evaluation Score</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Row -->
+                    <div class="admin-analytics-row">
+
+                        <!-- Job Title Breakdown -->
+                        <div class="analytics-card glassmorphism">
+                            <h3 class="analytics-title"><i class="fa-solid fa-user-group"></i> Participants by Job Title</h3>
+                            <div class="job-breakdown" id="job-breakdown">
+                                <div class="breakdown-empty">No data yet</div>
+                            </div>
+                        </div>
+
+                        <!-- Score Distribution -->
+                        <div class="analytics-card glassmorphism">
+                            <h3 class="analytics-title"><i class="fa-solid fa-chart-bar"></i> Exam Score Distribution</h3>
+                            <div class="score-bars" id="score-bars">
+                                <div class="breakdown-empty">No data yet</div>
+                            </div>
+                        </div>
+
+                        <!-- Admin Login Log -->
+                        <div class="analytics-card glassmorphism">
+                            <h3 class="analytics-title"><i class="fa-solid fa-clock-rotate-left"></i> Admin Login History</h3>
+                            <div class="login-log" id="login-log">
+                                <div class="breakdown-empty">No logins recorded</div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Participants Table -->
+                    <div class="admin-table-card glassmorphism">
+                        <div class="admin-table-header-row">
+                            <h3><i class="fa-solid fa-table-list"></i> All Participants</h3>
+                            <div class="table-filter-row">
+                                <input type="text" id="table-search" placeholder="🔍 Search by name or department..." oninput="filterTable(this.value)" class="table-search-input">
+                                <select id="table-filter-status" onchange="filterTable()" class="table-filter-select">
+                                    <option value="">All Statuses</option>
+                                    <option value="Passed">Passed</option>
+                                    <option value="Failed">Failed</option>
+                                </select>
+                                <select id="table-filter-job" onchange="filterTable()" class="table-filter-select">
+                                    <option value="">All Job Titles</option>
+                                    <option value="Nurse">Nurse</option>
+                                    <option value="Physician">Physician</option>
+                                    <option value="Others">Others</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="admin-table" id="admin-logs-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Name</th>
+                                        <th>Department</th>
+                                        <th>Job Title</th>
+                                        <th>Score</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Eval. Score</th>
+                                        <th>Comments</th>
+                                        <th>Certificate</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-table-body">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="table-footer-info" id="table-count-label"></div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer containing the Admin Access Portal (Hidden in Print) -->
+        <footer id="main-footer" class="no-print">
+            <p>&copy; 2026 Medical Training Portal. All rights reserved.</p>
+            <div class="admin-access-link" onclick="promptAdminLogin()">
+                <i class="fa-solid fa-lock-open admin-portal-icon" title="Admin Portal"></i> Admin Area
+            </div>
+        </footer>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="admin-modal" class="modal no-print">
+        <div class="modal-content glassmorphism animate-slide-down">
+            <span class="close-modal" onclick="closeAdminModal()">&times;</span>
+            <i class="fa-solid fa-shield-halved admin-modal-icon"></i>
+            <h3>Admin Portal Access</h3>
+            <p>Only authorized administrators can access the dashboard. Please verify your identity.</p>
+            <form onsubmit="event.preventDefault(); submitAdminLogin();">
+                <div class="form-group">
+                    <label for="admin-name"><i class="fa-solid fa-user"></i> Full Name</label>
+                    <input type="text" id="admin-name" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="admin-email"><i class="fa-solid fa-envelope"></i> Email Address</label>
+                    <input type="email" id="admin-email" placeholder="Enter your email address" required>
+                </div>
+                <div id="admin-error-msg" class="error-msg">Access denied. You are not authorized to access the admin portal.</div>
+                <button type="submit" class="btn btn-primary btn-block">Verify &amp; Log In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Course Scripts -->
+    <script src="script.js"></script>
+</body>
+</html>
