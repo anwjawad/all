@@ -5,7 +5,8 @@
 
 // ----- Admin Credentials (hardcoded for static-site security) ------
 const ADMIN_CREDENTIALS = [
-    { name: 'jehad hawamdah', email: 'jehadgml@gmail.com', display: 'Jehad Hawamdah' }
+    { name: 'jehad hawamdah', email: 'jehadgml@gmail.com', display: 'Jehad Hawamdah' },
+    { name: 'jabusabha', email: 'jabusabha@avh.org', display: 'Jabusabha' }
 ];
 
 // ----- Storage Keys ------------------------------------------------
