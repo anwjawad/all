@@ -1,3 +1,25 @@
+// ---- Multi-Course Routing ----------------------------------------
+// Read ?course= URL param. Default: 'anaphylaxis' (legacy behavior).
+// Dynamic (non-legacy) courses load their config from localStorage.
+const MC_COMPLETIONS_KEY = 'mc_all_completions';
+const MC_COURSES_KEY     = 'mc_courses';
+
+const _urlParams_    = new URLSearchParams(window.location.search);
+const currentCourseSlug = (_urlParams_.get('course') || 'anaphylaxis').toLowerCase();
+
+// Load dynamic course config (for non-anaphylaxis courses).
+// For 'anaphylaxis' / 'legacy' type, this stays null and existing hardcoded logic runs unchanged.
+let dynamicCourseConfig = null;
+if (currentCourseSlug !== 'anaphylaxis') {
+    try {
+        const raw = localStorage.getItem(MC_COURSES_KEY);
+        if (raw) {
+            const courses = JSON.parse(raw);
+            dynamicCourseConfig = courses.find(c => c.slug === currentCourseSlug) || null;
+        }
+    } catch(e) {}
+}
+
 // State Management
 let currentView = 'register';
 let studentData = {
@@ -21,7 +43,7 @@ let useSupabase = false;
 const CONFIG_KEY_URL = 'anaphylaxis_supabase_url';
 const CONFIG_KEY_KEY = 'anaphylaxis_supabase_key';
 const CONFIG_KEY_GAS = 'anaphylaxis_gas_url';
-const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbx08Hw8iVZip327-7p7okuxEII-UmmyEIjvmLAJG8_9AxseDSSRt69v2ApQoEGGpLat/exec';
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbzJFbq1qoQZD6ERUyexNi438u0gQmw2DyrSN0LQau5dUdvne1tFSBIh-XQsVQyyKyLUhQ/exec';
 let gasWebhookUrl = DEFAULT_GAS_URL;
 
 // Activity Completion States
@@ -111,19 +133,44 @@ document.addEventListener('DOMContentLoaded', () => {
     initGasConfig();
 
     // Set initial view state — detect direct certificate link from query params
-    const _urlParams = new URLSearchParams(window.location.search);
-    const _qCertId = _urlParams.get('certId');
-    const _qName   = _urlParams.get('name');
-    const _qDate   = _urlParams.get('date');
+    const _qCertId = _urlParams_.get('certId');
+    const _qName   = _urlParams_.get('name');
+    const _qDate   = _urlParams_.get('date');
+
     if (_qCertId && _qName) {
+        // Direct certificate link
         studentData.name          = _qName;
         studentData.certId        = _qCertId;
         studentData.dateCompleted = _qDate || '';
         document.getElementById('cert-participant-name').innerText = _qName;
         document.getElementById('cert-issue-date').innerText       = _qDate || '—';
         document.getElementById('cert-unique-id').innerText        = _qCertId;
+
+        // Apply dynamic course cert text if this cert belongs to a dynamic course
+        if (dynamicCourseConfig) {
+            const titleEl = document.querySelector('.cert-course-title');
+            const metaEl  = document.querySelector('.cert-course-meta');
+            if (titleEl) titleEl.textContent = dynamicCourseConfig.certTitle   || dynamicCourseConfig.title   || '';
+            if (metaEl)  metaEl.textContent  = dynamicCourseConfig.certSubtitle || '';
+        }
         switchView('certificate');
+    } else if (currentCourseSlug !== 'anaphylaxis' && !dynamicCourseConfig) {
+        // Unknown course slug — show friendly error
+        document.getElementById('view-register').innerHTML = `
+            <div class="card glassmorphism animate-fade-in" style="max-width:480px;margin:0 auto;text-align:center;padding:2.5rem;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size:3rem;color:#f59e0b;margin-bottom:1rem;"></i>
+                <h2 style="color:#b45309;margin-bottom:0.5rem;">Course Not Found</h2>
+                <p style="color:var(--text-muted);">The course link you opened (<strong>${currentCourseSlug}</strong>) does not exist or has been removed.</p>
+                <p style="color:var(--text-muted);margin-top:0.5rem;">Please contact your administrator for a valid course link.</p>
+            </div>`;
+        switchView('register');
     } else {
+        // Normal course flow
+        // Update header title for dynamic courses
+        if (dynamicCourseConfig) {
+            const logoH1 = document.querySelector('.logo-text h1');
+            if (logoH1) logoH1.textContent = dynamicCourseConfig.title || logoH1.textContent;
+        }
         switchView('register');
     }
     
@@ -365,23 +412,20 @@ function switchView(viewName) {
     }
 
     // Stop YouTube video when leaving the video section
+    const defaultVideoSrc = (dynamicCourseConfig && dynamicCourseConfig.videoUrl)
+        ? dynamicCourseConfig.videoUrl
+        : 'https://www.youtube.com/embed/yJnOgcba-To';
     if (viewName !== 'video') {
         const ytPlayer = document.getElementById('youtube-player');
         if (ytPlayer && ytPlayer.src) {
-            // Store original src and blank it to stop playback
-            if (!ytPlayer.dataset.origSrc) {
-                ytPlayer.dataset.origSrc = 'https://www.youtube.com/embed/yJnOgcba-To';
-            }
+            if (!ytPlayer.dataset.origSrc) ytPlayer.dataset.origSrc = defaultVideoSrc;
             ytPlayer.src = '';
         }
     } else {
-        // Restore video src when entering the video section
         const ytPlayer = document.getElementById('youtube-player');
         if (ytPlayer) {
-            const origSrc = ytPlayer.dataset.origSrc || 'https://www.youtube.com/embed/yJnOgcba-To';
-            if (!ytPlayer.src || ytPlayer.src === window.location.href) {
-                ytPlayer.src = origSrc;
-            }
+            const origSrc = ytPlayer.dataset.origSrc || defaultVideoSrc;
+            if (!ytPlayer.src || ytPlayer.src === window.location.href) ytPlayer.src = origSrc;
         }
     }
 
@@ -468,7 +512,11 @@ function submitRegistration() {
 
     // Transition to Course Presentation
     switchView('presentation');
-    loadSlide(1);
+    if (dynamicCourseConfig && dynamicCourseConfig.type === 'content') {
+        loadContentPage(1);
+    } else {
+        loadSlide(1);
+    }
 }
 
 function loginUser() {
@@ -685,13 +733,64 @@ function togglePlayHold() {
     }
 }
 
+// Renders a text content page for 'content'-type dynamic courses.
+function loadContentPage(pageNum) {
+    const pages = (dynamicCourseConfig && dynamicCourseConfig.contentPages) || [];
+    if (pageNum < 1 || pageNum > pages.length) return;
+
+    currentSlide = pageNum;
+    viewedSlides.add(pageNum);
+
+    // Hide the slide image; inject a text card instead
+    const imgEl = document.getElementById('slide-img');
+    if (imgEl) imgEl.style.display = 'none';
+
+    let contentEl = document.getElementById('dynamic-content-page');
+    if (!contentEl) {
+        contentEl = document.createElement('div');
+        contentEl.id = 'dynamic-content-page';
+        contentEl.className = 'card glassmorphism';
+        contentEl.style.cssText = 'padding:2rem;text-align:left;min-height:320px;margin-bottom:1rem;';
+        if (imgEl && imgEl.parentElement) imgEl.parentElement.insertBefore(contentEl, imgEl);
+    }
+
+    const page = pages[pageNum - 1] || {};
+    contentEl.innerHTML = `
+        <div style="font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--secondary-color);margin-bottom:0.5rem;">
+            Page ${pageNum} of ${pages.length}
+        </div>
+        <h2 style="font-family:var(--font-heading);font-size:1.35rem;color:var(--primary-color);margin-bottom:1rem;">${escapeHtml(page.title || '')}</h2>
+        <div style="line-height:1.9;color:var(--text-color);font-size:0.95rem;">${page.content || ''}</div>
+    `;
+
+    document.getElementById('current-slide-num').innerText = pageNum;
+    document.getElementById('btn-back').disabled = (pageNum === 1);
+    document.getElementById('btn-next').disabled = (pageNum === pages.length);
+
+    // Content pages have no audio
+    audioPlayer.src = '';
+    pauseAudio();
+    const displayEl = document.getElementById('audio-duration-display');
+    if (displayEl) displayEl.innerText = 'No Audio Narration';
+
+    checkCourseCompletion();
+}
+
 function nextSlide() {
+    if (dynamicCourseConfig && dynamicCourseConfig.type === 'content') {
+        loadContentPage(currentSlide + 1);
+        return;
+    }
     if (currentSlide < totalSlides) {
         loadSlide(currentSlide + 1);
     }
 }
 
 function prevSlide() {
+    if (dynamicCourseConfig && dynamicCourseConfig.type === 'content') {
+        loadContentPage(currentSlide - 1);
+        return;
+    }
     if (currentSlide > 1) {
         loadSlide(currentSlide - 1);
     }
@@ -756,17 +855,34 @@ function toggleMute() {
 }
 
 function checkCourseCompletion() {
-    // Course slides are complete when all 24 slides have been viewed at least once
-    if (viewedSlides.size === totalSlides) {
+    let required = totalSlides;
+    if (dynamicCourseConfig) {
+        required = dynamicCourseConfig.type === 'content'
+            ? (dynamicCourseConfig.contentPages || []).length || 1
+            : (dynamicCourseConfig.totalSlides   || totalSlides);
+    }
+    if (viewedSlides.size >= required) {
         const btn = document.getElementById('btn-start-video');
-        btn.classList.remove('disabled');
-        btn.disabled = false;
+        if (btn) { btn.classList.remove('disabled'); btn.disabled = false; }
     }
 }
 
 function goToVideo() {
-    if (viewedSlides.size < totalSlides) {
-        alert("Please complete reviewing all 24 presentation slides before watching the video.");
+    let required = totalSlides;
+    let label    = '24 presentation slides';
+    if (dynamicCourseConfig) {
+        required = dynamicCourseConfig.type === 'content'
+            ? (dynamicCourseConfig.contentPages || []).length || 1
+            : (dynamicCourseConfig.totalSlides   || totalSlides);
+        label = `all ${required} ${dynamicCourseConfig.type === 'content' ? 'content pages' : 'slides'}`;
+    }
+    if (viewedSlides.size < required) {
+        alert(`Please complete reviewing ${label} before proceeding.`);
+        return;
+    }
+    // Skip video step for dynamic courses that have no video URL
+    if (dynamicCourseConfig && !dynamicCourseConfig.videoUrl) {
+        goToActivity();
         return;
     }
     switchView('video');
@@ -786,11 +902,22 @@ function formatTime(secs) {
 // -----------------------------------------
 // POST-EXAM MODULE
 // -----------------------------------------
+
+// Returns exam questions for the active course (dynamic or legacy anaphylaxis).
+function getActiveExamQuestions() {
+    if (dynamicCourseConfig &&
+        Array.isArray(dynamicCourseConfig.examQuestions) &&
+        dynamicCourseConfig.examQuestions.length > 0) {
+        return dynamicCourseConfig.examQuestions;
+    }
+    return examQuestions;
+}
+
 function renderExamQuestions() {
     const container = document.getElementById('exam-questions-container');
     container.innerHTML = '';
 
-    examQuestions.forEach((q, idx) => {
+    getActiveExamQuestions().forEach((q, idx) => {
         const qBlock = document.createElement('div');
         qBlock.className = 'question-block';
         
@@ -815,11 +942,11 @@ function renderExamQuestions() {
 }
 
 function gradeExam() {
+    const activeQuestions = getActiveExamQuestions();
     let score = 0;
     let unanswered = false;
 
-    // Check all questions
-    examQuestions.forEach(q => {
+    activeQuestions.forEach(q => {
         const selected = document.querySelector(`input[name="q-${q.id}"]:checked`);
         if (!selected) {
             unanswered = true;
@@ -831,17 +958,19 @@ function gradeExam() {
     });
 
     if (unanswered) {
-        alert(`Please answer all ${examQuestions.length} questions before submitting.`);
+        alert(`Please answer all ${activeQuestions.length} questions before submitting.`);
         return;
     }
 
     studentData.score = score;
-    const totalQs = examQuestions.length;
-    const passThreshold = Math.ceil(totalQs * 0.8); // 4/5 = 80%    
-    
+    const totalQs = activeQuestions.length;
+    const passThreshold = (dynamicCourseConfig && dynamicCourseConfig.passThreshold != null)
+        ? Math.ceil(totalQs * (dynamicCourseConfig.passThreshold / 100))
+        : Math.ceil(totalQs * 0.8);
+
     if (score >= passThreshold) {
         studentData.status = 'Passed';
-        
+
         // Generate certificate details early so they can be stored in course_completions
         studentData.certId = generateCertificateId();
         studentData.dateCompleted = new Date().toLocaleDateString(undefined, {
@@ -865,11 +994,12 @@ function gradeExam() {
                     if (error) console.error("Failed to log passing completion to Supabase:", error);
                 });
         }
-        
+
         // Hide the form and show the success message
         const form = document.getElementById('exam-form');
         form.style.display = 'none';
 
+        const courseLabel = dynamicCourseConfig ? (dynamicCourseConfig.title || 'course') : 'anaphylaxis post-training';
         const resultsContainer = document.createElement('div');
         resultsContainer.className = 'exam-results-msg success animate-slide-down';
         resultsContainer.innerHTML = `
@@ -878,7 +1008,7 @@ function gradeExam() {
             <div style="background: rgba(16, 185, 129, 0.1); padding: 10px 20px; border-radius: 8px; display: inline-block; margin-bottom: 15px;">
                 <span style="font-weight: 700; color: var(--success-color); font-size: 1.2rem;">Exam Score: ${score}/${totalQs} (${Math.round((score/totalQs)*100)}%)</span>
             </div>
-            <p style="margin-bottom: 25px; font-size: 1.05rem;">You have successfully passed the anaphylaxis post-training exam.</p>
+            <p style="margin-bottom: 25px; font-size: 1.05rem;">You have successfully passed the ${escapeHtml(courseLabel)} exam.</p>
             <button type="button" class="btn btn-success btn-lg" onclick="proceedToEvaluation()">
                 Proceed to Course Evaluation <i class="fa-solid fa-arrow-right"></i>
             </button>
@@ -1027,10 +1157,23 @@ function submitEvaluation() {
     // Save final record to local database
     saveParticipantLog();
 
+    // Save to cross-course completions store (for View Certificates page)
+    saveCrossCourseCompletion();
+
     // Populate Certificate Card
     document.getElementById('cert-participant-name').innerText = studentData.name;
-    document.getElementById('cert-issue-date').innerText = studentData.dateCompleted;
-    document.getElementById('cert-unique-id').innerText = studentData.certId;
+    document.getElementById('cert-issue-date').innerText       = studentData.dateCompleted;
+    document.getElementById('cert-unique-id').innerText        = studentData.certId;
+
+    // Update cert course box if dynamic course
+    if (dynamicCourseConfig) {
+        const courseTitle = dynamicCourseConfig.certTitle || dynamicCourseConfig.title || '';
+        const certSubtitle= dynamicCourseConfig.certSubtitle || '';
+        const titleEl = document.querySelector('.cert-course-title');
+        const metaEl  = document.querySelector('.cert-course-meta');
+        if (titleEl) titleEl.textContent = courseTitle;
+        if (metaEl)  metaEl.textContent  = certSubtitle;
+    }
 
     // Proceed to Certificate display
     switchView('certificate');
@@ -1114,7 +1257,7 @@ function saveParticipantLog() {
         department: studentData.department,
         jobTitle: studentData.jobTitle,
         password: studentData.password || '',
-        score: `${studentData.score}/${examQuestions.length}`,
+        score: `${studentData.score}/${getActiveExamQuestions().length}`,
         status: studentData.status,
         date: studentData.dateCompleted || new Date().toLocaleDateString(),
         rating: studentData.rating || 'N/A',
@@ -1690,9 +1833,10 @@ function buildCertLink() {
     if (!studentData.certId || !studentData.name) return '';
     const base = window.location.href.split('?')[0].split('#')[0];
     const params = new URLSearchParams({
-        certId: studentData.certId,
-        name:   studentData.name,
-        date:   studentData.dateCompleted || ''
+        certId:  studentData.certId,
+        name:    studentData.name,
+        date:    studentData.dateCompleted || '',
+        course:  currentCourseSlug
     });
     return `${base}?${params.toString()}`;
 }
@@ -1702,17 +1846,78 @@ function buildCertLinkFromLog(log) {
     if (!log.certId || log.certId === 'N/A' || log.status !== 'Passed') return '';
     const base = window.location.href.split('?')[0].split('#')[0];
     const params = new URLSearchParams({
-        certId: log.certId,
-        name:   log.name,
-        date:   log.date || ''
+        certId:  log.certId,
+        name:    log.name,
+        date:    log.date || '',
+        course:  log.courseSlug || currentCourseSlug
     });
     return `${base}?${params.toString()}`;
+}
+
+// Save a cross-course completion record so the Certificates portal can find it.
+function saveCrossCourseCompletion() {
+    if (!studentData.certId || !studentData.name || studentData.status !== 'Passed') return;
+
+    // Determine course display info
+    const courseTitle   = dynamicCourseConfig?.certTitle   || dynamicCourseConfig?.title   || 'Anaphylaxis Recognition & Management';
+    const certSubtitle  = dynamicCourseConfig?.certSubtitle || '1.0 Contact Hour | Current Clinical Guidelines';
+
+    let completions = [];
+    try {
+        const raw = localStorage.getItem(MC_COMPLETIONS_KEY);
+        if (raw) completions = JSON.parse(raw);
+    } catch(e) {}
+
+    // Avoid duplicate entries
+    const dup = completions.find(c =>
+        c.certId === studentData.certId &&
+        c.courseSlug === currentCourseSlug);
+    if (dup) return;
+
+    completions.push({
+        completionId: studentData.certId + '-' + Date.now(),
+        courseId:     currentCourseSlug,
+        courseSlug:   currentCourseSlug,
+        courseTitle,
+        certSubtitle,
+        employeeName: studentData.name,
+        department:   studentData.department || '',
+        jobTitle:     studentData.jobTitle   || '',
+        password:     studentData.password   || '',
+        score:        `${studentData.score}/${getActiveExamQuestions().length}`,
+        status:       'Passed',
+        certId:       studentData.certId,
+        completedAt:  studentData.dateCompleted || new Date().toLocaleDateString(),
+        date:         studentData.dateCompleted || new Date().toLocaleDateString(),
+        rating:       studentData.rating || ''
+    });
+    localStorage.setItem(MC_COMPLETIONS_KEY, JSON.stringify(completions));
+
+    // Sync to GAS (multi-course action)
+    if (gasWebhookUrl) {
+        fetch(gasWebhookUrl, {
+            method: 'POST',
+            mode:   'no-cors',
+            body:   JSON.stringify({
+                action:      'syncCompletion',
+                completion:  completions[completions.length - 1]
+            })
+        }).catch(() => {});
+    }
 }
 
 // -----------------------------------------
 // INTERACTIVE ACTIVITY FUNCTIONS
 // -----------------------------------------
 function goToActivity() {
+    // Non-legacy dynamic courses skip the anaphylaxis-specific activities
+    if (dynamicCourseConfig) {
+        activityDragDone  = true;
+        activityMcqDone   = true;
+        activityOrderDone = true;
+        switchView('exam');
+        return;
+    }
     switchView('activity');
 }
 

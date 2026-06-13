@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — Medical Training Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<!-- ADMIN LOGIN PAGE -->
+<div id="admin-login-page" class="admin-login-page">
+    <div class="admin-login-card glassmorphism animate-fade-in">
+        <div class="admin-login-logo">
+            <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <h2>Admin Portal</h2>
+        <p>Authorized administrators only. Please verify your identity to access the dashboard.</p>
+        <form id="admin-login-form" onsubmit="event.preventDefault(); adminLogin();">
+            <div class="form-group">
+                <label for="al-name"><i class="fa-solid fa-user"></i> Full Name</label>
+                <input type="text" id="al-name" placeholder="Enter your full name" required autocomplete="name">
+            </div>
+            <div class="form-group">
+                <label for="al-email"><i class="fa-solid fa-envelope"></i> Email Address</label>
+                <input type="email" id="al-email" placeholder="Enter your email" required autocomplete="email">
+            </div>
+            <div id="al-error" class="error-msg">Access denied. Invalid credentials.</div>
+            <button type="submit" class="btn btn-primary btn-block btn-lg">
+                <i class="fa-solid fa-unlock"></i> Log In to Admin Panel
+            </button>
+        </form>
+        <div style="text-align:center;margin-top:1.5rem;">
+            <a href="index.html" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left"></i> Back to Course Portal
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ADMIN DASHBOARD (shown after login) -->
+<div id="admin-dashboard-page" style="display:none;">
+
+    <!-- Sidebar Navigation -->
+    <nav class="admin-sidebar" id="admin-sidebar">
+        <div class="sidebar-logo">
+            <i class="fa-solid fa-heart-pulse pulse-icon" style="font-size:1.5rem;color:#5eead4;"></i>
+            <span>Admin Portal</span>
+        </div>
+        <ul class="sidebar-nav">
+            <li>
+                <a href="#" class="sidebar-link active" onclick="showTab('overview');return false;" id="tab-link-overview">
+                    <i class="fa-solid fa-gauge-high"></i> <span>Overview</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="sidebar-link" onclick="showTab('courses');return false;" id="tab-link-courses">
+                    <i class="fa-solid fa-book-medical"></i> <span>Courses</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="sidebar-link" onclick="showTab('participants');return false;" id="tab-link-participants">
+                    <i class="fa-solid fa-users"></i> <span>Participants</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="sidebar-link" onclick="showTab('settings');return false;" id="tab-link-settings">
+                    <i class="fa-solid fa-gear"></i> <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <button class="btn btn-secondary btn-sm btn-block" onclick="adminLogout()" style="margin-bottom:8px;">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </button>
+            <a href="index.html" class="btn btn-secondary btn-sm btn-block">
+                <i class="fa-solid fa-graduation-cap"></i> Course Portal
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="admin-main">
+
+        <!-- Top Bar -->
+        <div class="admin-topbar">
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="topbar-title" id="topbar-title">Dashboard Overview</div>
+            <div class="topbar-user">
+                <i class="fa-solid fa-circle-user" style="color:var(--secondary-color);font-size:1.4rem;"></i>
+                <span id="admin-display-name">Admin</span>
+            </div>
+        </div>
+
+        <!-- ===== TAB: OVERVIEW ===== -->
+        <div id="tab-overview" class="tab-content active">
+            <div class="admin-dashboard animate-fade-in">
+
+                <!-- Welcome Banner -->
+                <div class="admin-dash-header">
+                    <div class="admin-dash-title">
+                        <i class="fa-solid fa-gauge-high"></i>
+                        <div>
+                            <h2>Dashboard Overview</h2>
+                            <p id="admin-welcome-msg">Loading…</p>
+                        </div>
+                    </div>
+                    <div class="admin-dash-actions">
+                        <button class="btn btn-success btn-sm" onclick="exportToExcel()">
+                            <i class="fa-solid fa-file-excel"></i> Export Excel
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="exportToCSV()">
+                            <i class="fa-solid fa-file-csv"></i> Export CSV
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="clearAllLogs()">
+                            <i class="fa-solid fa-trash-can"></i> Clear Data
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Global Stats -->
+                <div class="admin-stats-grid">
+                    <div class="stat-card stat-blue">
+                        <div class="stat-icon"><i class="fa-solid fa-book-medical"></i></div>
+                        <div class="stat-body">
+                            <div class="stat-number" id="stat-total-courses">0</div>
+                            <div class="stat-label">Total Courses</div>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-teal">
+                        <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                        <div class="stat-body">
+                            <div class="stat-number" id="stat-total-participants">0</div>
+                            <div class="stat-label">Total Participants</div>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-green">
+                        <div class="stat-icon"><i class="fa-solid fa-certificate"></i></div>
+                        <div class="stat-body">
+                            <div class="stat-number" id="stat-total-certs">0</div>
+                            <div class="stat-label">Certificates Issued</div>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-amber">
+                        <div class="stat-icon"><i class="fa-solid fa-percent"></i></div>
+                        <div class="stat-body">
+                            <div class="stat-number" id="stat-overall-pass-rate">0%</div>
+                            <div class="stat-label">Overall Pass Rate</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Course Cards Grid -->
+                <div class="section-header">
+                    <h3><i class="fa-solid fa-book-medical"></i> Published Courses</h3>
+                    <button class="btn btn-primary btn-sm" onclick="showTab('courses');openCreateCourseModal();">
+                        <i class="fa-solid fa-plus"></i> New Course
+                    </button>
+                </div>
+                <div id="overview-courses-grid" class="courses-overview-grid">
+                    <div class="breakdown-empty">Loading courses…</div>
+                </div>
+
+                <!-- Analytics Row -->
+                <div class="admin-analytics-row">
+                    <div class="analytics-card glassmorphism">
+                        <h3 class="analytics-title"><i class="fa-solid fa-user-group"></i> Participants by Job Title</h3>
+                        <div id="overview-job-breakdown"><div class="breakdown-empty">No data yet</div></div>
+                    </div>
+                    <div class="analytics-card glassmorphism">
+                        <h3 class="analytics-title"><i class="fa-solid fa-chart-bar"></i> Exam Score Distribution</h3>
+                        <div id="overview-score-bars"><div class="breakdown-empty">No data yet</div></div>
+                    </div>
+                    <div class="analytics-card glassmorphism">
+                        <h3 class="analytics-title"><i class="fa-solid fa-clock-rotate-left"></i> Admin Login History</h3>
+                        <div class="login-log" id="overview-login-log"><div class="breakdown-empty">No logins recorded</div></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ===== TAB: COURSES ===== -->
+        <div id="tab-courses" class="tab-content">
+            <div class="admin-dashboard animate-fade-in">
+                <div class="admin-dash-header">
+                    <div class="admin-dash-title">
+                        <i class="fa-solid fa-book-medical"></i>
+                        <div>
+                            <h2>Course Management</h2>
+                            <p>Create, edit and manage all training courses. Generate unique shareable links.</p>
+                        </div>
+                    </div>
+                    <div class="admin-dash-actions">
+                        <button class="btn btn-primary btn-sm" onclick="openCreateCourseModal()">
+                            <i class="fa-solid fa-plus"></i> Create New Course
+                        </button>
+                    </div>
+                </div>
+
+                <div class="admin-table-card glassmorphism">
+                    <div class="admin-table-header-row">
+                        <h3><i class="fa-solid fa-list"></i> All Courses</h3>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table" id="courses-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Title</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Participants</th>
+                                    <th>Pass Rate</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="courses-table-body">
+                                <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">Loading courses…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB: PARTICIPANTS ===== -->
+        <div id="tab-participants" class="tab-content">
+            <div class="admin-dashboard animate-fade-in">
+                <div class="admin-dash-header">
+                    <div class="admin-dash-title">
+                        <i class="fa-solid fa-users"></i>
+                        <div>
+                            <h2>All Participants</h2>
+                            <p>View and manage all course participants across all courses.</p>
+                        </div>
+                    </div>
+                    <div class="admin-dash-actions">
+                        <button class="btn btn-success btn-sm" onclick="exportToExcel()">
+                            <i class="fa-solid fa-file-excel"></i> Export Excel
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="exportToCSV()">
+                            <i class="fa-solid fa-file-csv"></i> Export CSV
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Connection Panels -->
+                <div class="db-connection-panel glassmorphism" style="margin-bottom:1.5rem;padding:1.2rem 2rem;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;background:rgba(255,255,255,0.65);">
+                    <div style="display:flex;align-items:center;gap:15px;">
+                        <div id="gas-status-icon" style="width:14px;height:14px;border-radius:50%;background:#f59e0b;box-shadow:0 0 8px #f59e0b;transition:all 0.3s ease;flex-shrink:0;"></div>
+                        <div>
+                            <h4 style="margin:0;font-size:0.95rem;font-weight:700;color:var(--primary-color);">Google Sheets Sync: <span id="gas-status-text">Not Configured</span></h4>
+                            <p style="margin:2px 0 0 0;font-size:0.78rem;color:var(--text-muted);">Paste your GAS Web App URL to sync all participant data to Google Sheet.</p>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;flex:1;justify-content:flex-end;max-width:600px;">
+                        <input type="text" id="gas-url" placeholder="GAS Web App URL (https://script.google.com/macros/s/...)" style="flex:1;min-width:280px;padding:0.5rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.85rem;">
+                        <button type="button" class="btn btn-primary btn-sm" onclick="saveGasConfig()" style="padding:0.55rem 1rem;border-radius:6px;">Connect</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="disconnectGas()" style="padding:0.55rem 1rem;border-radius:6px;background:rgba(220,38,38,0.08);border-color:rgba(220,38,38,0.2);color:#dc2626;font-weight:600;">Remove</button>
+                    </div>
+                </div>
+
+                <!-- Filter Stats Row -->
+                <div class="admin-stats-grid" style="grid-template-columns:repeat(4,1fr)">
+                    <div class="stat-card stat-blue">
+                        <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                        <div class="stat-body">
+                            <div class="stat-number" id="part-stat-total">0</div>
+                            <div class="stat-label">Total Registrations</div>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-green">
+                        <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+                        <div class="stat-body">
+                            <div class="stat-number" id="part-stat-passed">0</div>
+                            <div class="stat-label">Passed</div>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-amber">
+                        <div class="stat-icon"><i class="fa-solid fa-percent"></i></div>
+                        <div class="stat-body">
+                            <div class="stat-number" id="part-stat-rate">0%</div>
+                            <div class="stat-label">Pass Rate</div>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-teal">
+                        <div class="stat-icon"><i class="fa-solid fa-star"></i></div>
+                        <div class="stat-body">
+                            <div class="stat-number" id="part-stat-rating">—</div>
+                            <div class="stat-label">Avg. Evaluation</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Participants Table -->
+                <div class="admin-table-card glassmorphism">
+                    <div class="admin-table-header-row">
+                        <h3><i class="fa-solid fa-table-list"></i> All Participants</h3>
+                        <div class="table-filter-row">
+                            <select id="part-filter-course" onchange="filterParticipantsTable()" class="table-filter-select">
+                                <option value="">All Courses</option>
+                            </select>
+                            <input type="text" id="part-search" placeholder="🔍 Search by name or department..." oninput="filterParticipantsTable()" class="table-search-input">
+                            <select id="part-filter-status" onchange="filterParticipantsTable()" class="table-filter-select">
+                                <option value="">All Statuses</option>
+                                <option value="Passed">Passed</option>
+                                <option value="Failed">Failed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table" id="participants-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Course</th>
+                                    <th>Department</th>
+                                    <th>Job Title</th>
+                                    <th>Score</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Eval.</th>
+                                    <th>Certificate</th>
+                                </tr>
+                            </thead>
+                            <tbody id="participants-table-body">
+                                <tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-muted);">Loading participants…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-footer-info" id="participants-count-label"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB: COURSE EDITOR (full-page, replaces modal) ===== -->
+        <div id="tab-course-editor" class="tab-content">
+            <div class="admin-dashboard animate-fade-in">
+
+                <!-- Editor Header -->
+                <div class="admin-dash-header">
+                    <div class="admin-dash-title">
+                        <button onclick="closeCourseEditor()" class="btn btn-secondary btn-sm" style="margin-right:12px;flex-shrink:0;">
+                            <i class="fa-solid fa-arrow-left"></i> Back to Courses
+                        </button>
+                        <div>
+                            <h2 id="editor-page-title">New Course</h2>
+                            <p id="editor-page-subtitle">Start with a template or build from scratch</p>
+                        </div>
+                    </div>
+                    <div class="admin-dash-actions">
+                        <button class="btn btn-secondary" onclick="saveCourse()">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Draft
+                        </button>
+                        <button class="btn btn-success" onclick="saveCourse('published')">
+                            <i class="fa-solid fa-globe"></i> Save &amp; Publish
+                        </button>
+                    </div>
+                </div>
+
+                <input type="hidden" id="cf-id">
+
+                <!-- Templates Strip (new courses only) -->
+                <div id="templates-section" style="margin-bottom:1.5rem;">
+                    <div class="section-header" style="margin-bottom:0.8rem;">
+                        <h3><i class="fa-solid fa-wand-magic-sparkles" style="color:#7c3aed;"></i> Start with a Template</h3>
+                        <span style="font-size:0.82rem;color:var(--text-muted);">Pick one to pre-fill all fields, or scroll down to start blank</span>
+                    </div>
+                    <div class="templates-grid" id="templates-grid"></div>
+                    <hr style="margin:1.5rem 0;border:none;border-top:2px dashed rgba(17,94,89,0.12);">
+                </div>
+
+                <!-- Editor Tabs Navigation -->
+                <div class="editor-tabs-nav">
+                    <button class="editor-tab-btn active" id="etab-btn-info"        onclick="showEditorTab('info')">
+                        <i class="fa-solid fa-circle-info"></i> Basic Info
+                    </button>
+                    <button class="editor-tab-btn" id="etab-btn-content"   onclick="showEditorTab('content')">
+                        <i class="fa-solid fa-file-lines"></i> Content
+                    </button>
+                    <button class="editor-tab-btn" id="etab-btn-video"     onclick="showEditorTab('video')">
+                        <i class="fa-solid fa-video"></i> Video
+                    </button>
+                    <button class="editor-tab-btn" id="etab-btn-exam"      onclick="showEditorTab('exam')">
+                        <i class="fa-solid fa-clipboard-question"></i> Exam
+                    </button>
+                    <button class="editor-tab-btn" id="etab-btn-certificate" onclick="showEditorTab('certificate')">
+                        <i class="fa-solid fa-certificate"></i> Certificate
+                    </button>
+                </div>
+
+                <!-- ---- TAB: BASIC INFO ---- -->
+                <div id="etab-info" class="editor-tab-panel glassmorphism">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+                        <div class="form-group" style="margin:0;">
+                            <label for="cf-title"><i class="fa-solid fa-heading"></i> Course Title *</label>
+                            <input type="text" id="cf-title" placeholder="e.g., Hand Hygiene Compliance Training" oninput="autoFillSlug()">
+                            <span class="field-hint">The name shown to participants on the course page.</span>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label for="cf-duration"><i class="fa-solid fa-clock"></i> Estimated Duration</label>
+                            <input type="text" id="cf-duration" placeholder="e.g., 30-Minute Online Training">
+                            <span class="field-hint">Shown on the registration page.</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top:1.2rem;">
+                        <label for="cf-description"><i class="fa-solid fa-align-left"></i> Course Description</label>
+                        <textarea id="cf-description" rows="3" placeholder="Describe what participants will learn. This appears on the registration page."></textarea>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.2rem;margin-top:1.2rem;">
+                        <div class="form-group" style="margin:0;">
+                            <label for="cf-slug"><i class="fa-solid fa-link"></i> URL Key *</label>
+                            <div class="slug-input-wrapper">
+                                <span class="slug-prefix">?course=</span>
+                                <input type="text" id="cf-slug" placeholder="hand-hygiene" pattern="[a-z0-9\-]+" title="Lowercase, numbers and hyphens only">
+                            </div>
+                            <span class="field-hint">Auto-generated. Lowercase, no spaces.</span>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label for="cf-type"><i class="fa-solid fa-layer-group"></i> Content Type</label>
+                            <select id="cf-type" onchange="onCourseTypeChange()">
+                                <option value="content">Text / Content Pages</option>
+                                <option value="slides">Image Slides</option>
+                            </select>
+                            <span class="field-hint">How course material is presented.</span>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label for="cf-pass-score"><i class="fa-solid fa-percent"></i> Passing Grade</label>
+                            <input type="number" id="cf-pass-score" min="1" max="100" value="80">
+                            <span class="field-hint">Minimum % correct to earn a certificate.</span>
+                        </div>
+                    </div>
+
+                    <!-- Slides Config -->
+                    <div id="slides-config-section" style="display:none;margin-top:1.5rem;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:1.5rem;">
+                        <h4 style="font-family:var(--font-heading);color:#b45309;margin:0 0 1rem 0;font-size:0.95rem;"><i class="fa-solid fa-images"></i> Slide Images Configuration</h4>
+                        <p style="font-size:0.83rem;color:var(--text-muted);margin-bottom:1rem;">Your slide images must already be uploaded to your site under a fixed path.</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                            <div class="form-group" style="margin:0;">
+                                <label>Slides Path Prefix</label>
+                                <input type="text" id="cf-slides-path" placeholder="assets/slides/mycourse/slide_">
+                                <span class="field-hint">The path before the slide number, e.g., assets/slides/mycourse/slide_</span>
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>Total Number of Slides</label>
+                                <input type="number" id="cf-total-slides" min="1" placeholder="24">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>Audio Path Prefix (optional)</label>
+                                <input type="text" id="cf-audio-path" placeholder="assets/audio/mycourse/media">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>Number of Audio Files</label>
+                                <input type="number" id="cf-audio-count" min="0" placeholder="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ---- TAB: CONTENT ---- -->
+                <div id="etab-content" class="editor-tab-panel glassmorphism" style="display:none;">
+                    <div id="content-type-notice" style="display:none;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.22);border-radius:10px;padding:1rem 1.5rem;margin-bottom:1.5rem;">
+                        <p style="margin:0;font-size:0.87rem;color:#92400e;"><i class="fa-solid fa-triangle-exclamation"></i> This course uses Image Slides — content pages are not applicable. Configure the slides path in <strong>Basic Info</strong>.</p>
+                    </div>
+                    <div id="content-pages-builder">
+                        <div class="section-header" style="margin-bottom:0.8rem;">
+                            <div>
+                                <h3><i class="fa-solid fa-file-lines"></i> Content Pages <span id="content-page-count" class="count-badge">0 pages</span></h3>
+                                <p style="font-size:0.83rem;color:var(--text-muted);margin-top:3px;">Each page is one screen of reading material. Use the formatting toolbar — no coding needed.</p>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="addContentPage()">
+                                <i class="fa-solid fa-plus"></i> Add Page
+                            </button>
+                        </div>
+                        <div id="content-pages-list">
+                            <div id="content-pages-empty" class="empty-state-box">
+                                <i class="fa-solid fa-file-circle-plus"></i>
+                                <p>No pages yet.<br>Click <strong>"Add Page"</strong> to start building your course content.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ---- TAB: VIDEO ---- -->
+                <div id="etab-video" class="editor-tab-panel glassmorphism" style="display:none;">
+                    <h3 style="font-family:var(--font-heading);margin-bottom:0.4rem;"><i class="fa-brands fa-youtube" style="color:#dc2626;"></i> Supplementary Video</h3>
+                    <p style="color:var(--text-muted);font-size:0.87rem;margin-bottom:1.5rem;">Add a YouTube video that participants watch after the content and before the exam. Leave blank to skip the video step.</p>
+                    <div class="form-group" style="max-width:640px;">
+                        <label>YouTube Video URL</label>
+                        <input type="text" id="cf-video" placeholder="https://www.youtube.com/watch?v=..." oninput="updateVideoPreview()">
+                        <span class="field-hint">Paste a standard YouTube URL or an embed URL — both work.</span>
+                    </div>
+                    <div id="video-preview-container" style="display:none;margin-top:1.5rem;">
+                        <div style="font-weight:600;color:var(--primary-color);margin-bottom:0.7rem;font-size:0.9rem;"><i class="fa-solid fa-eye"></i> Live Preview</div>
+                        <iframe id="video-preview-frame" width="560" height="315" frameborder="0" allowfullscreen style="border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1);max-width:100%;display:block;"></iframe>
+                    </div>
+                </div>
+
+                <!-- ---- TAB: EXAM ---- -->
+                <div id="etab-exam" class="editor-tab-panel glassmorphism" style="display:none;">
+                    <div class="section-header" style="margin-bottom:0.8rem;">
+                        <div>
+                            <h3><i class="fa-solid fa-clipboard-question"></i> Exam Questions <span id="exam-question-count" class="count-badge">0 questions</span></h3>
+                            <p style="font-size:0.83rem;color:var(--text-muted);margin-top:3px;">Each question has 4 options. Click the <i class="fa-solid fa-check" style="color:#059669;"></i> button to mark the correct answer.</p>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="addExamQuestion()">
+                            <i class="fa-solid fa-plus"></i> Add Question
+                        </button>
+                    </div>
+                    <div id="exam-questions-list">
+                        <div id="exam-questions-empty" class="empty-state-box">
+                            <i class="fa-solid fa-circle-question"></i>
+                            <p>No questions yet.<br>Click <strong>"Add Question"</strong> to build the exam.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ---- TAB: CERTIFICATE ---- -->
+                <div id="etab-certificate" class="editor-tab-panel glassmorphism" style="display:none;">
+                    <h3 style="font-family:var(--font-heading);margin-bottom:0.4rem;"><i class="fa-solid fa-certificate"></i> Certificate Configuration</h3>
+                    <p style="color:var(--text-muted);font-size:0.87rem;margin-bottom:1.5rem;">Customize what appears on the certificate. The participant's name and completion date are added automatically.</p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;">
+                        <div class="form-group" style="margin:0;">
+                            <label for="cf-cert-title">Course Name on Certificate</label>
+                            <input type="text" id="cf-cert-title" placeholder="Defaults to course title if blank" oninput="updateCertPreview()">
+                            <span class="field-hint">The main course title line on the certificate.</span>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label for="cf-cert-subtitle">Certificate Subtitle</label>
+                            <input type="text" id="cf-cert-subtitle" placeholder="e.g., 1.0 Contact Hour | Current Guidelines" oninput="updateCertPreview()">
+                            <span class="field-hint">Shown below the title — use for CME hours or accreditation.</span>
+                        </div>
+                    </div>
+                    <div style="font-weight:600;color:var(--primary-color);margin-bottom:0.8rem;font-size:0.9rem;display:flex;align-items:center;gap:8px;">
+                        <i class="fa-solid fa-eye"></i> Live Certificate Preview
+                    </div>
+                    <div id="cert-preview-container" style="background-image:url('assets/resources/certificate_theme.png');background-size:100% 100%;background-repeat:no-repeat;aspect-ratio:16/9;width:100%;max-width:820px;border-radius:4px;box-shadow:0 8px 32px rgba(0,0,0,0.12);position:relative;overflow:hidden;">
+                        <div class="certificate-content-overlay">
+                            <div class="cert-overlay-body">
+                                <div class="cert-header"><span class="cert-badge-text">OFFICIAL CONTINUING MEDICAL EDUCATION</span></div>
+                                <h1 class="cert-main-title">CERTIFICATE OF COMPLETION</h1>
+                                <p class="cert-presentation-text">This is proudly presented to</p>
+                                <h2 class="cert-recipient-name" style="font-size:1.9rem;">Participant Name</h2>
+                                <p class="cert-course-desc">for the successful completion of the web-based training course in clinical practice:</p>
+                                <div class="cert-course-box">
+                                    <h3 id="cert-preview-title" class="cert-course-title">Course Title</h3>
+                                    <p id="cert-preview-subtitle" class="cert-course-meta">Certificate Subtitle</p>
+                                </div>
+                            </div>
+                            <div class="cert-overlay-footer">
+                                <div class="cert-footer-item">
+                                    <span class="cert-footer-label">Date Issued:</span>
+                                    <strong class="cert-footer-val">January 1, 2026</strong>
+                                </div>
+                                <div class="cert-footer-item">
+                                    <span class="cert-footer-label">Certificate ID:</span>
+                                    <strong class="cert-footer-val">AN-PREVIEW-0001</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Save Bar -->
+                <div class="editor-bottom-bar">
+                    <button class="btn btn-secondary" onclick="closeCourseEditor()">
+                        <i class="fa-solid fa-xmark"></i> Cancel
+                    </button>
+                    <div style="display:flex;gap:0.8rem;">
+                        <button class="btn btn-secondary btn-lg" onclick="saveCourse()">
+                            <i class="fa-solid fa-floppy-disk"></i> Save as Draft
+                        </button>
+                        <button class="btn btn-success btn-lg" onclick="saveCourse('published')">
+                            <i class="fa-solid fa-globe"></i> Save &amp; Publish
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ===== TAB: SETTINGS ===== -->
+        <div id="tab-settings" class="tab-content">
+            <div class="admin-dashboard animate-fade-in">
+                <div class="admin-dash-header">
+                    <div class="admin-dash-title">
+                        <i class="fa-solid fa-gear"></i>
+                        <div>
+                            <h2>Settings</h2>
+                            <p>Configure database connections and sync options.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Credentials Info -->
+                <div class="glassmorphism" style="padding:1.5rem 2rem;border-radius:12px;background:rgba(255,255,255,0.65);margin-bottom:1.5rem;">
+                    <h4 style="font-family:var(--font-heading);color:var(--primary-color);margin-bottom:0.5rem;"><i class="fa-solid fa-user-shield"></i> Admin Credentials</h4>
+                    <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:0.8rem;">Admin credentials are currently hardcoded for security. To change them, update the <code>ADMIN_CREDENTIALS</code> array in <code>admin.js</code> and redeploy.</p>
+                    <div id="settings-admin-list" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+                </div>
+
+                <!-- Google Sheets Config -->
+                <div class="glassmorphism" style="padding:1.5rem 2rem;border-radius:12px;background:rgba(255,255,255,0.65);margin-bottom:1.5rem;">
+                    <h4 style="font-family:var(--font-heading);color:var(--primary-color);margin-bottom:0.5rem;"><i class="fa-solid fa-table-cells"></i> Google Sheets Sync</h4>
+                    <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1rem;">Paste your Google Apps Script Web App URL to enable automatic data sync to Google Sheets.</p>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <input type="text" id="settings-gas-url" placeholder="https://script.google.com/macros/s/..." style="flex:1;min-width:280px;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.9rem;">
+                        <button class="btn btn-primary" onclick="saveGasConfigFromSettings()"><i class="fa-solid fa-floppy-disk"></i> Save URL</button>
+                        <button class="btn btn-secondary" onclick="testGasConnection()" style="background:rgba(17,94,89,0.06);border-color:rgba(17,94,89,0.15);color:var(--primary-color);"><i class="fa-solid fa-vial"></i> Test</button>
+                    </div>
+                    <div id="settings-gas-status" style="margin-top:0.7rem;font-size:0.82rem;color:var(--text-muted);"></div>
+                </div>
+
+                <!-- Sheets Structure Reference -->
+                <div class="glassmorphism" style="padding:1.5rem 2rem;border-radius:12px;background:rgba(255,255,255,0.65);margin-bottom:1.5rem;">
+                    <h4 style="font-family:var(--font-heading);color:var(--primary-color);margin-bottom:0.8rem;"><i class="fa-solid fa-database"></i> Required Google Sheets Structure</h4>
+                    <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1rem;">Your Google Sheet should have the following tabs. The GAS script creates them automatically on first use.</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;">
+                        <div class="sheet-tab-info">
+                            <strong>Course Participants</strong>
+                            <span>Original anaphylaxis course completions (preserved)</span>
+                        </div>
+                        <div class="sheet-tab-info">
+                            <strong>Courses</strong>
+                            <span>All courses: courseId, slug, title, type, status, createdAt</span>
+                        </div>
+                        <div class="sheet-tab-info">
+                            <strong>AllCompletions</strong>
+                            <span>Cross-course completions: certId, name, courseTitle, date, score</span>
+                        </div>
+                        <div class="sheet-tab-info">
+                            <strong>Users</strong>
+                            <span>Employee accounts: name, passwordHash, department, jobTitle</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="glassmorphism" style="padding:1.5rem 2rem;border-radius:12px;background:rgba(254,242,242,0.6);border:1px solid rgba(220,38,38,0.15);">
+                    <h4 style="font-family:var(--font-heading);color:#dc2626;margin-bottom:0.5rem;"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</h4>
+                    <p style="font-size:0.88rem;color:#6b7280;margin-bottom:1rem;">Permanently delete all local data. Remote Google Sheets records are not affected.</p>
+                    <button class="btn btn-danger btn-sm" onclick="clearAllLogs()"><i class="fa-solid fa-trash-can"></i> Clear All Local Data</button>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+</div>
+
+
+<!-- ===== COURSE LINK SHARE MODAL ===== -->
+<div id="link-modal" class="modal" style="display:none;">
+    <div class="modal-content glassmorphism animate-slide-down" style="max-width:480px;">
+        <span class="close-modal" onclick="closeLinkModal()">&times;</span>
+        <i class="fa-solid fa-link admin-modal-icon"></i>
+        <h3>Share Course Link</h3>
+        <p>Send this link to your employees. They will only see this specific course.</p>
+        <div style="display:flex;gap:8px;margin-top:1rem;">
+            <input type="text" id="share-link-input" readonly style="flex:1;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:#f9fafb;">
+            <button class="btn btn-primary" onclick="copyShareLink()" id="copy-link-btn">
+                <i class="fa-solid fa-copy"></i> Copy
+            </button>
+        </div>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.8rem;text-align:left;">
+            <i class="fa-solid fa-info-circle"></i> Employees who open this link will see <strong>only</strong> this course — not the admin panel or other courses.
+        </p>
+    </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>

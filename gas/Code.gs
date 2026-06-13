@@ -1,6 +1,6 @@
 /**
- * ANAPHYLAXIS COURSE – GOOGLE SHEETS SYNC
- * =========================================
+ * MULTI-COURSE TRAINING PORTAL – GOOGLE SHEETS SYNC
+ * ====================================================
  * SETUP INSTRUCTIONS:
  *
  * 1. Open your Google Sheet
@@ -11,7 +11,25 @@
  * 6. Gear icon → Type: Web app
  *    Execute as: Me  |  Who has access: Anyone
  * 7. Click Deploy, authorize, copy the Web App URL
- * 8. Paste URL in course Admin Panel → Google Sheets Sync → Connect
+ * 8. Paste URL in Admin Dashboard → Settings → Google Sheets Sync URL
+ *
+ * SHEET TABS CREATED AUTOMATICALLY:
+ *   - Course Participants  (original anaphylaxis course — preserved)
+ *   - Courses              (all courses created in the admin)
+ *   - AllCompletions       (cross-course completion records)
+ *   - Users                (employee accounts)
+ *
+ * POST actions routed by data.action field:
+ *   (none / undefined)   → Course Participants (legacy anaphylaxis sync)
+ *   syncCourse           → Courses sheet
+ *   syncCompletion       → AllCompletions sheet
+ *   syncUser             → Users sheet
+ *
+ * GET actions routed by e.parameter.action:
+ *   getData              → Course Participants (legacy)
+ *   getCourses           → Courses sheet
+ *   getCompletions       → AllCompletions sheet (optionally ?name=...)
+ *   (none)               → health check
  */
 
 // ─── CONFIGURATION ────────────────────────────────────────────────
@@ -92,13 +110,21 @@ function jsonResponse(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// ─── POST HANDLER ─────────────────────────────────────────────────
+// ─── POST HANDLER (routes by data.action) ─────────────────────────
 function doPost(e) {
   try {
     const raw = e.postData ? e.postData.contents : null;
     if (!raw) return jsonResponse({ success: false, error: 'No data received' });
 
-    const data = JSON.parse(raw);
+    const data   = JSON.parse(raw);
+    const action = data.action || '';
+
+    // ── Multi-course: route to correct handler ──────────────────────
+    if (action === 'syncCourse')      { syncCourse(data);      return jsonResponse({ success: true }); }
+    if (action === 'syncCompletion')  { syncCompletion(data);  return jsonResponse({ success: true }); }
+    if (action === 'syncUser')        { syncUser(data);        return jsonResponse({ success: true }); }
+
+    // ── Legacy: Anaphylaxis course participant sync (no action field) ─
     const sheet = getOrCreateSheet();
     ensureHeaders(sheet);
 
@@ -127,8 +153,6 @@ function doPost(e) {
     const newRow = sheet.getLastRow();
 
     // ── FIX: re-write score & date as explicit TEXT to prevent date auto-conversion.
-    // appendRow already wrote them, but Sheets may have silently converted them.
-    // Setting @STRING@ format then re-calling setValue forces the cell to plain text.
     sheet.getRange(newRow, 5).setNumberFormat('@STRING@').setValue(data.score || '');
     sheet.getRange(newRow, 7).setNumberFormat('@STRING@').setValue(data.date  || '');
 
@@ -220,6 +244,171 @@ function doGet(e) {
     }
   }
 
+  // ─── Multi-course: getCourses ───────────────────────────────────
+  if (action === 'getCourses') {
+    try {
+      const sheet   = getOrCreateSheetNamed('Courses');
+      const lastRow = sheet.getLastRow();
+      if (lastRow <= 1) return jsonResponse({ success: true, courses: [] });
+      const values  = sheet.getRange(2, 1, lastRow - 1, 8).getValues();
+      const courses = values
+        .filter(r => r[0] && String(r[0]).trim() !== '')
+        .map(r => ({
+          courseId:    String(r[0]),
+          slug:        String(r[1]),
+          title:       String(r[2]),
+          description: String(r[3]),
+          type:        String(r[4]),
+          status:      String(r[5]),
+          createdAt:   String(r[6]),
+          updatedAt:   String(r[7])
+        }));
+      return jsonResponse({ success: true, courses });
+    } catch(err) {
+      return jsonResponse({ success: false, error: err.message });
+    }
+  }
+
+  // ─── Multi-course: getCompletions ───────────────────────────────
+  if (action === 'getCompletions') {
+    try {
+      const filterName = e && e.parameter && e.parameter.name ? e.parameter.name.toLowerCase() : '';
+      const sheet      = getOrCreateSheetNamed('AllCompletions');
+      const lastRow    = sheet.getLastRow();
+      if (lastRow <= 1) return jsonResponse({ success: true, completions: [] });
+      const values     = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
+      const completions = values
+        .filter(r => r[0] && String(r[0]).trim() !== '')
+        .filter(r => !filterName || String(r[3]).toLowerCase() === filterName)
+        .map(r => ({
+          completionId:  String(r[0]),
+          courseId:      String(r[1]),
+          courseSlug:    String(r[2]),
+          employeeName:  String(r[3]),
+          courseTitle:   String(r[4]),
+          certSubtitle:  String(r[5]),
+          score:         String(r[6]),
+          status:        String(r[7]),
+          certId:        String(r[8]),
+          completedAt:   String(r[9])
+        }));
+      return jsonResponse({ success: true, completions });
+    } catch(err) {
+      return jsonResponse({ success: false, error: err.message });
+    }
+  }
+
   // Health-check (default)
-  return jsonResponse({ status: 'ok', app: 'Anaphylaxis Course Sync', version: '1.3', sheet: SHEET_NAME });
+  return jsonResponse({ status: 'ok', app: 'Multi-Course Training Portal', version: '2.0', sheet: SHEET_NAME });
 }
+
+// ─── MULTI-COURSE HELPER: get or create named sheet ───────────────
+function getOrCreateSheetNamed(name) {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet   = ss.getSheetByName(name);
+  if (!sheet) sheet = ss.insertSheet(name);
+  return sheet;
+}
+
+// ─── MULTI-COURSE: sync course record ─────────────────────────────
+function syncCourse(data) {
+  const course  = data.course || {};
+  const sheet   = getOrCreateSheetNamed('Courses');
+
+  // Ensure header row
+  if (sheet.getLastRow() === 0) {
+    const headers = ['courseId','slug','title','description','type','status','createdAt','updatedAt'];
+    sheet.appendRow(headers);
+    sheet.getRange(1, 1, 1, headers.length)
+         .setBackground('#115e59').setFontColor('#ffffff').setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+
+  // Check if this course already exists (by courseId in col A)
+  const lastRow = sheet.getLastRow();
+  let existingRow = -1;
+  if (lastRow > 1) {
+    const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat();
+    existingRow = ids.indexOf(course.courseId) + 2; // +2 for 1-indexed + header
+    if (existingRow < 2) existingRow = -1;
+  }
+
+  const row = [
+    course.courseId    || '',
+    course.slug        || '',
+    course.title       || '',
+    course.description || '',
+    course.type        || 'content',
+    course.status      || 'draft',
+    course.createdAt   || Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd'),
+    Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss')
+  ];
+
+  if (existingRow > 0) {
+    sheet.getRange(existingRow, 1, 1, row.length).setValues([row]);
+  } else {
+    sheet.appendRow(row);
+  }
+}
+
+// ─── MULTI-COURSE: sync completion record ─────────────────────────
+function syncCompletion(data) {
+  const comp  = data.completion || {};
+  const sheet = getOrCreateSheetNamed('AllCompletions');
+
+  if (sheet.getLastRow() === 0) {
+    const headers = ['completionId','courseId','courseSlug','employeeName','courseTitle','certSubtitle','score','status','certId','completedAt'];
+    sheet.appendRow(headers);
+    sheet.getRange(1, 1, 1, headers.length)
+         .setBackground('#115e59').setFontColor('#ffffff').setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+
+  const row = [
+    comp.completionId  || '',
+    comp.courseId      || '',
+    comp.courseSlug    || '',
+    comp.employeeName  || comp.name || '',
+    comp.courseTitle   || '',
+    comp.certSubtitle  || '',
+    comp.score         || '',
+    comp.status        || '',
+    comp.certId        || '',
+    comp.completedAt   || comp.date || ''
+  ];
+  sheet.appendRow(row);
+
+  // Color-code status cell (col 8)
+  const newRow = sheet.getLastRow();
+  const statusCell = sheet.getRange(newRow, 8);
+  if      (comp.status === 'Passed') statusCell.setBackground('#d1fae5').setFontColor('#065f46').setFontWeight('bold');
+  else if (comp.status === 'Failed') statusCell.setBackground('#fee2e2').setFontColor('#991b1b').setFontWeight('bold');
+}
+
+// ─── MULTI-COURSE: sync user record ───────────────────────────────
+function syncUser(data) {
+  const user  = data.user || {};
+  const sheet = getOrCreateSheetNamed('Users');
+
+  if (sheet.getLastRow() === 0) {
+    const headers = ['userId','name','passwordHash','department','jobTitle','email','createdAt'];
+    sheet.appendRow(headers);
+    sheet.getRange(1, 1, 1, headers.length)
+         .setBackground('#115e59').setFontColor('#ffffff').setFontWeight('bold');
+    sheet.setFrozenRows(1);
+    // Protect passwordHash column from easy reading
+    sheet.setColumnWidth(3, 80);
+  }
+
+  const row = [
+    user.userId       || '',
+    user.name         || '',
+    user.passwordHash || '(hashed)',
+    user.department   || '',
+    user.jobTitle     || '',
+    user.email        || '',
+    Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss')
+  ];
+  sheet.appendRow(row);
+}
+

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View My Certificates — Medical Training Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ---- Certificates page specific styles ---- */
+        body { padding: 20px; }
+
+        #app-container { max-width: 900px; }
+
+        .cert-portal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding-bottom: 1.2rem;
+            border-bottom: 2px solid rgba(13, 148, 136, 0.1);
+        }
+
+        .cert-portal-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cert-portal-logo h1 {
+            font-family: var(--font-heading);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            line-height: 1.2;
+        }
+
+        .cert-portal-logo span {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Cert cards grid */
+        .certs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1.2rem;
+            margin-top: 1.5rem;
+        }
+
+        .cert-card {
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 16px var(--shadow-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .cert-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 28px rgba(17, 94, 89, 0.12);
+        }
+
+        .cert-card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 1.1rem 1.3rem;
+            color: white;
+        }
+
+        .cert-card-header .course-name {
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+
+        .cert-card-header .cert-badge-small {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .cert-card-body {
+            padding: 1.1rem 1.3rem;
+        }
+
+        .cert-meta-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 0.5rem;
+            font-size: 0.83rem;
+            color: var(--text-muted);
+        }
+
+        .cert-meta-row i {
+            color: var(--secondary-color);
+            width: 14px;
+            text-align: center;
+        }
+
+        .cert-meta-row strong {
+            color: var(--text-color);
+        }
+
+        .cert-card-actions {
+            padding: 0.8rem 1.3rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Empty state */
+        .empty-certs {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-muted);
+        }
+
+        .empty-certs i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: rgba(17, 94, 89, 0.2);
+        }
+
+        .empty-certs h3 {
+            font-family: var(--font-heading);
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Certificate print modal */
+        #cert-view-modal .modal-content {
+            max-width: 920px;
+            width: calc(100vw - 40px);
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        #modal-cert-container {
+            background-image: url('assets/resources/certificate_theme.png');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            aspect-ratio: 16/9;
+            width: 100%;
+            max-width: 860px;
+            margin: 1rem auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media print {
+            @page { size: A4 landscape; margin: 0mm; }
+            body > * { display: none !important; }
+            #cert-view-modal {
+                display: block !important;
+                position: fixed !important;
+                top: 0; left: 0;
+                width: 100%; height: 100%;
+                background: white !important;
+                backdrop-filter: none !important;
+                padding: 0 !important;
+            }
+            #cert-view-modal .modal-content {
+                max-width: none !important;
+                width: 297mm !important;
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+            .cert-modal-actions { display: none !important; }
+            #modal-cert-container {
+                position: fixed !important;
+                top: 0; left: 0;
+                width: 297mm !important;
+                height: 210mm !important;
+                max-width: none !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                aspect-ratio: unset !important;
+                background-image: url('assets/resources/certificate_theme.png') !important;
+                background-size: 100% 100% !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .certificate-content-overlay { padding: 13% 10% 4% 10% !important; }
+            .cert-overlay-body { height: 70% !important; }
+            .cert-main-title { font-size: 1.8rem !important; margin-bottom: 8px !important; }
+            .cert-recipient-name { font-size: 2.2rem !important; }
+            .cert-course-title { font-size: 1.15rem !important; }
+            .cert-overlay-footer {
+                position: absolute !important;
+                bottom: 8% !important; left: 48% !important;
+                width: 25% !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+
+    <!-- Portal Header -->
+    <header class="cert-portal-header no-print">
+        <div class="cert-portal-logo">
+            <i class="fa-solid fa-certificate" style="font-size:1.8rem;color:var(--secondary-color);"></i>
+            <div>
+                <h1>My Certificates</h1>
+                <span>Clinical Education &amp; Training Portal</span>
+            </div>
+        </div>
+        <div style="display:flex;gap:0.6rem;align-items:center;">
+            <a href="index.html" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-graduation-cap"></i> Course Portal
+            </a>
+            <button id="btn-logout-cert" class="btn btn-secondary btn-sm" onclick="logoutCertPortal()" style="display:none;">
+                <i class="fa-solid fa-right-from-bracket"></i> Log Out
+            </button>
+        </div>
+    </header>
+
+    <!-- LOGIN SECTION -->
+    <section id="cert-login-section">
+        <div class="card glassmorphism animate-fade-in" style="max-width:480px;margin:0 auto;">
+            <div class="text-center" style="margin-bottom:2rem;">
+                <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:white;margin:0 auto 1rem;">
+                    <i class="fa-solid fa-certificate"></i>
+                </div>
+                <h2>View Your Certificates</h2>
+                <p>Enter your registered name and password to view all your course completion certificates.</p>
+            </div>
+            <form id="cert-login-form" onsubmit="event.preventDefault(); certLogin();">
+                <div class="form-group">
+                    <label for="cl-name"><i class="fa-solid fa-user-check"></i> Your Registered Full Name</label>
+                    <input type="text" id="cl-name" required placeholder="Enter the exact name used during registration" autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label for="cl-password"><i class="fa-solid fa-key"></i> Password</label>
+                    <input type="password" id="cl-password" required placeholder="Your course password" autocomplete="current-password">
+                </div>
+                <div id="cl-error" class="error-msg">Incorrect name or password. Please try again.</div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg" id="cl-submit-btn">
+                    <i class="fa-solid fa-magnifying-glass"></i> Find My Certificates
+                </button>
+            </form>
+            <div style="margin-top:1.5rem;padding:1rem;background:rgba(17,94,89,0.04);border-radius:8px;font-size:0.82rem;color:var(--text-muted);">
+                <i class="fa-solid fa-info-circle" style="color:var(--secondary-color);"></i>
+                Your name and password are the same ones you used when registering for any course on this portal.
+            </div>
+        </div>
+    </section>
+
+    <!-- CERTIFICATES DISPLAY SECTION (shown after login) -->
+    <section id="cert-display-section" style="display:none;">
+
+        <!-- User Info Bar -->
+        <div class="glassmorphism animate-fade-in" style="padding:1rem 1.5rem;border-radius:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;background:rgba(255,255,255,0.65);">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:44px;height:44px;background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.1rem;">
+                    <i class="fa-solid fa-user-nurse"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;font-size:1rem;color:var(--primary-color);" id="display-user-name">—</div>
+                    <div style="font-size:0.78rem;color:var(--text-muted);" id="display-user-dept">—</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.85rem;color:var(--text-muted);">
+                <i class="fa-solid fa-certificate" style="color:var(--secondary-color);"></i>
+                <span id="cert-count-label">0 certificates</span>
+            </div>
+        </div>
+
+        <!-- Certificates Grid -->
+        <div id="certs-grid" class="certs-grid">
+            <!-- Populated by JS -->
+        </div>
+
+    </section>
+
+</div>
+
+<!-- CERTIFICATE VIEW MODAL -->
+<div id="cert-view-modal" class="modal" style="display:none;">
+    <div class="modal-content glassmorphism animate-slide-down" style="max-width:920px;width:calc(100vw - 40px);text-align:center;padding:1.5rem;">
+        <span class="close-modal" onclick="closeCertModal()" style="z-index:10;">&times;</span>
+
+        <!-- Certificate Design (same as index.html) -->
+        <div id="modal-cert-container">
+            <div class="certificate-content-overlay">
+                <div class="cert-overlay-body">
+                    <div class="cert-header">
+                        <span class="cert-badge-text">OFFICIAL CONTINUING MEDICAL EDUCATION</span>
+                    </div>
+                    <h1 class="cert-main-title">CERTIFICATE OF COMPLETION</h1>
+                    <p class="cert-presentation-text">This is proudly presented to</p>
+                    <h2 id="modal-cert-name" class="cert-recipient-name">—</h2>
+                    <p class="cert-course-desc">for the successful completion of the web-based training course in clinical practice:</p>
+                    <div class="cert-course-box">
+                        <h3 id="modal-cert-course" class="cert-course-title">—</h3>
+                        <p id="modal-cert-subtitle" class="cert-course-meta">—</p>
+                    </div>
+                </div>
+                <div class="cert-overlay-footer">
+                    <div class="cert-footer-item">
+                        <span class="cert-footer-label">Date Issued:</span>
+                        <strong id="modal-cert-date" class="cert-footer-val">—</strong>
+                    </div>
+                    <div class="cert-footer-item">
+                        <span class="cert-footer-label">Certificate ID:</span>
+                        <strong id="modal-cert-id" class="cert-footer-val">—</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cert-modal-actions" style="display:flex;justify-content:center;gap:1rem;margin-top:1rem;">
+            <button class="btn btn-primary btn-lg" onclick="printModalCertificate()">
+                <i class="fa-solid fa-print"></i> Print / Save as PDF
+            </button>
+            <button class="btn btn-secondary btn-lg" onclick="closeCertModal()">
+                <i class="fa-solid fa-xmark"></i> Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="certificates.js"></script>
+</body>
+</html>

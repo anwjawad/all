@@ -1133,10 +1133,14 @@
 
         <!-- Footer containing the Admin Access Portal (Hidden in Print) -->
         <footer id="main-footer" class="no-print">
-            <p>&copy; 2026 Medical Training Portal. All rights reserved.</p>
-            <div class="admin-access-link" onclick="promptAdminLogin()">
-                <i class="fa-solid fa-lock-open admin-portal-icon" title="Admin Portal"></i> Admin Area
-            </div>
+            <p>&copy; 2026 Medical Training Portal. All rights reserved. &nbsp;|&nbsp;
+                <a href="certificates.html" style="color:var(--secondary-color);font-weight:600;text-decoration:none;" title="View your certificates">
+                    <i class="fa-solid fa-certificate"></i> View My Certificates
+                </a>
+            </p>
+            <a href="admin.html" class="admin-access-link" title="Admin Portal" style="text-decoration:none;">
+                <i class="fa-solid fa-lock-open admin-portal-icon"></i> Admin Area
+            </a>
         </footer>
     </div>
 
