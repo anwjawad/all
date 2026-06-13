@@ -597,6 +597,12 @@ function renderParticipantsTable(logs) {
             <td style="font-size:0.82rem;white-space:nowrap">${escapeHtml(p.date)}</td>
             <td style="text-align:center;font-weight:600">${p.rating !== 'N/A' && p.rating ? parseFloat(p.rating).toFixed(1) + '/4' : '—'}</td>
             <td style="text-align:center">${certCell}</td>
+            <td style="text-align:center">
+                <button class="btn btn-secondary btn-sm" title="Reset password"
+                    onclick="openResetPasswordModal('${escapeHtml(p.name).replace(/'/g,"\\'")}')">
+                    <i class="fa-solid fa-key"></i>
+                </button>
+            </td>
         </tr>`;
     }).join('');
 
@@ -1355,6 +1361,85 @@ function clearAllLogs() {
     renderOverview();
     filterParticipantsTable();
     alert('All local data cleared.');
+}
+
+// ===================================================================
+// RESET PASSWORD
+// ===================================================================
+function openResetPasswordModal(employeeName) {
+    document.getElementById('reset-pw-name').textContent    = employeeName;
+    document.getElementById('reset-pw-employee').value      = employeeName;
+    document.getElementById('reset-pw-input').value         = '';
+    document.getElementById('reset-pw-error').style.display   = 'none';
+    document.getElementById('reset-pw-success').style.display = 'none';
+    document.getElementById('reset-pw-modal').style.display   = 'flex';
+    setTimeout(() => document.getElementById('reset-pw-input').focus(), 100);
+}
+
+function closeResetPwModal() {
+    document.getElementById('reset-pw-modal').style.display = 'none';
+}
+
+async function resetEmployeePassword() {
+    const name     = document.getElementById('reset-pw-employee').value;
+    const password = document.getElementById('reset-pw-input').value.trim();
+    const errorEl  = document.getElementById('reset-pw-error');
+    const successEl= document.getElementById('reset-pw-success');
+
+    errorEl.style.display   = 'none';
+    successEl.style.display = 'none';
+
+    if (!password) { errorEl.style.display = 'block'; return; }
+
+    const hash = await sha256Admin(password);
+    let updated = 0;
+
+    // Update mc_all_completions
+    try {
+        const raw = localStorage.getItem(MC_COMPLETIONS_KEY);
+        if (raw) {
+            const comps = JSON.parse(raw);
+            comps.forEach(c => {
+                if ((c.employeeName || c.name || '').toLowerCase() === name.toLowerCase()) {
+                    c.passwordHash = hash;
+                    c.password     = hash;
+                    updated++;
+                }
+            });
+            localStorage.setItem(MC_COMPLETIONS_KEY, JSON.stringify(comps));
+        }
+    } catch(e) {}
+
+    // Update legacy anaphylaxis logs
+    try {
+        const raw = localStorage.getItem(ANAPHYLAXIS_LOGS_KEY);
+        if (raw) {
+            const logs = JSON.parse(raw);
+            logs.forEach(l => {
+                if ((l.name || '').toLowerCase() === name.toLowerCase()) {
+                    l.password = hash;
+                    updated++;
+                }
+            });
+            localStorage.setItem(ANAPHYLAXIS_LOGS_KEY, JSON.stringify(logs));
+        }
+    } catch(e) {}
+
+    if (updated > 0) {
+        successEl.style.display = 'block';
+        setTimeout(() => closeResetPwModal(), 1800);
+    } else {
+        errorEl.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> No records found for this employee.';
+        errorEl.style.display = 'block';
+    }
+}
+
+async function sha256Admin(message) {
+    try {
+        const buf  = new TextEncoder().encode(message);
+        const hash = await crypto.subtle.digest('SHA-256', buf);
+        return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+    } catch(e) { return message; }
 }
 
 // ===================================================================

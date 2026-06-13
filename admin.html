@@ -332,6 +332,7 @@
                                     <th>Date</th>
                                     <th>Eval.</th>
                                     <th>Certificate</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="participants-table-body">
@@ -678,6 +679,32 @@
         <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.8rem;text-align:left;">
             <i class="fa-solid fa-info-circle"></i> Employees who open this link will see <strong>only</strong> this course — not the admin panel or other courses.
         </p>
+    </div>
+</div>
+
+<!-- ===== RESET PASSWORD MODAL ===== -->
+<div id="reset-pw-modal" class="modal" style="display:none;">
+    <div class="modal-content glassmorphism animate-slide-down" style="max-width:420px;">
+        <span class="close-modal" onclick="closeResetPwModal()">&times;</span>
+        <i class="fa-solid fa-key admin-modal-icon" style="color:#f59e0b;font-size:2.5rem;margin-bottom:0.5rem;"></i>
+        <h3>Reset Password</h3>
+        <p style="color:var(--text-muted);font-size:0.9rem;">Set a new password for <strong id="reset-pw-name" style="color:#0f172a;"></strong>.</p>
+        <input type="hidden" id="reset-pw-employee">
+        <div class="form-group" style="margin:1.2rem 0 0.5rem;text-align:left;">
+            <label style="font-size:0.85rem;">New Password</label>
+            <input type="password" id="reset-pw-input" placeholder="Enter new password…"
+                style="width:100%;padding:0.75rem;border:1.5px solid var(--border-color);border-radius:8px;font-size:0.9rem;box-sizing:border-box;"
+                onkeydown="if(event.key==='Enter') resetEmployeePassword()">
+        </div>
+        <div id="reset-pw-error" style="display:none;color:#dc2626;font-size:0.82rem;margin-bottom:0.5rem;">
+            <i class="fa-solid fa-circle-exclamation"></i> Please enter a password.
+        </div>
+        <div id="reset-pw-success" style="display:none;color:#059669;font-size:0.82rem;margin-bottom:0.5rem;">
+            <i class="fa-solid fa-circle-check"></i> Password updated successfully.
+        </div>
+        <button class="btn btn-primary btn-lg" style="width:100%;margin-top:0.6rem;" onclick="resetEmployeePassword()">
+            <i class="fa-solid fa-key"></i> Save New Password
+        </button>
     </div>
 </div>
 
